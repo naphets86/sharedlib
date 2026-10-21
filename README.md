@@ -45,7 +45,8 @@ pip install -e ".[dev]"
 
 Metadaten (`wsat.json`):
 
-```json
+```
+json
 {
   "name": "wsat", "version": "1.2.0", "abi_version": 1,
   "targets": [{"platform": "linux", "arch": "x86_64"}],
@@ -59,13 +60,16 @@ Metadaten (`wsat.json`):
 Bauen und nutzen:
 
 ```bash
-python -m sl gen   --meta wsat.json -o gen/
-python -m sl build --meta wsat.json --source gen/wsat_sl.c --source impl.c -I gen -o wsat.sl
-SL_PATH=$PWD python -c "import sl; print(sl.open('wsat').info)"
+# Mit installiertem sl-CLI oder via python -m sl:
+sl gen   --meta wsat.json -o gen/
+sl build --meta wsat.json --source gen/wsat_sl.c --source impl.c -I gen -o wsat.sl
 ```
 
+In Python laden:
+
 ```python
-import ctypes, sl
+import ctypes
+import sl
 
 with sl.open("wsat") as lib:        # auf allen Plattformen identisch
     solve = lib.symbol("wsat_solve",
@@ -81,40 +85,52 @@ Die C-artige Statusschnittstelle liefert `(status, wert, fehlerinfo)` statt Ausn
 
 | Befehl | Zweck |
 |---|---|
-| `python -m sl info DATEI.sl` | Metadaten und enthaltene Payloads anzeigen |
-| `python -m sl gen --meta M.json -o DIR` | Header, C-Quelle, CMake, Python-Binding, Build-Matrix erzeugen |
-| `python -m sl build --meta M.json --source A.c [-I DIR] [-D X=1] [--extra P:A=DATEI] -o OUT.sl` | für das Host-Target kompilieren, vorgebaute Payloads anderer Targets ergänzen |
-| `python -m sl pack --meta M.json --payload P:A=DATEI ... -o OUT.sl` | vorhandene Binaries zu einem Fat-`.sl` packen |
-| `python -m sl matrix --meta M.json` | Build-Matrix als JSON ausgeben |
+| `sl info DATEI.sl` | Metadaten und enthaltene Payloads anzeigen |
+| `sl gen --meta M.json -o DIR` | Header, C-Quelle, CMake, Python-Binding, Build-Matrix erzeugen |
+| `sl build --meta M.json --source A.c [-I DIR] [-D X=1] [--extra P:A=DATEI] -o OUT.sl` | Für das Host-Target kompilieren, vorgebaute Payloads anderer Targets ergänzen |
+| `sl pack --meta M.json --payload P:A=DATEI ... -o OUT.sl` | Vorhandene Binaries zu einem Fat-`.sl` packen |
+| `sl matrix --meta M.json` | Build-Matrix als JSON ausgeben |
 
-Plattformen: `linux`, `macos`, `windows`. Architekturen: `x86_64`, `aarch64`, `x86`, `arm`.
-Fehler erscheinen als `sl: error: ...` mit Exit-Code 2.
+Unterstützte Plattformen: `linux`, `macos`, `windows`.  
+Unterstützte Architekturen: `x86_64`, `aarch64`, `x86`, `arm` .  
+Fehler erscheinen einheitlich auf stderr als `sl: error: ...` mit Exit-Code 2 .
 
 ## Suchreihenfolge
 
-1. expliziter Pfad (dann ausschließlich dieser)
-2. `SL_PATH` (Trennzeichen `:`, `\:` und `\\` als Escapes, nur absolute Einträge)
-3. Verzeichnis des Aufrufers und dessen Unterverzeichnis `sl/`
-4. Anwendungsverzeichnis
-5. systemweite Verzeichnisse des Plattformadapters
+1. Expliziter Pfad (dann ausschließlich dieser)
+2. `SL_PATH` (Trennzeichen `:` unter POSIX oder `;` unter Windows; `\:` und `\\` als Escapes; Windows-Laufwerksbuchstaben wie `C:\` werden geschützt; nur absolute Einträge werden berücksichtigt)
+3. Verzeichnis des Aufrufers (`requester_dir`) und dessen Unterverzeichnis `sl/`
+4. Anwendungsverzeichnis (`app_dir`)
+5. Systemweite Standardverzeichnisse des jeweiligen Plattformadapters
 
 Nie durchsucht werden das aktuelle Arbeitsverzeichnis sowie `PATH`, `LD_LIBRARY_PATH`
 und `DYLD_LIBRARY_PATH`. Mit `Loader(hardened=True)` wird `SL_PATH` ignoriert, und Treffer
-in weltbeschreibbaren Verzeichnissen werden abgelehnt. Abhängigkeiten werden nach derselben
+in weltbeschreibbaren Verzeichnissen (`world-writable`) werden abgewiesen. Abhängigkeiten werden nach derselben
 Reihenfolge aufgelöst.
 
 ## Fehlermodell
 
 `SLError` trägt `status` (`SLStatus`), `message`, `failed_name`, `searched` und
-`native_error`. Statuswerte: `NOT_FOUND`, `DEPENDENCY_MISSING`, `ARCH_MISMATCH`,
-`ABI_MISMATCH`, `INVALID_CONTAINER`, `SYMBOL_NOT_FOUND`, `INIT_FAILED`, `CYCLE`,
-`ACCESS_DENIED`, `INTERNAL`.
+`native_error`. Statuswerte:
+- `SLStatus.OK` (0)
+- `SLStatus.NOT_FOUND` (1)
+- `SLStatus.DEPENDENCY_MISSING` (2)
+- `SLStatus.ARCH_MISMATCH` (3)
+- `SLStatus.ABI_MISMATCH` (4)
+- `SLStatus.INVALID_CONTAINER` (5)
+- `SLStatus.SYMBOL_NOT_FOUND` (6)
+- `SLStatus.INIT_FAILED` (7)
+- `SLStatus.CYCLE` (8)
+- `SLStatus.ACCESS_DENIED` (9)
+- `SLStatus.INTERNAL` (10)
 
 ## Tests
 
-Gcc setzen:
+MinGW und Gcc setzen:
 ```bash
+$env:PATH = "C:\Pfad\zu\mingw64\bin;C:\Pfad\zu\cmake\bin;" + $env:PATH
 $env:CC = "gcc"
+pytest
 ```
 
 Tests ausführen:
