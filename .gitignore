@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+*.whl
+
+# Virtuelle Umgebungen
+.venv/
+venv/
+env/
+
+# Tests und Abdeckung
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+
+# Native Build-Artefakte
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+*.a
+*.lib
+
+# Generierte Ausgaben (z. B. `python -m sl gen -o gen/`)
+gen/
+
+# Editoren und Betriebssysteme
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db

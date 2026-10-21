@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sharedlib"
+version = "1.0.0"
+description = "Reference implementation of the unified shared library (.sl) layers: container, standardized loader, platform adapters, code and build generation"
+readme = "README.md"
+requires-python = ">=3.11"
+
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pylint",
+    "pytest",
+    "pytest-cov",
+]
+
+[project.scripts]
+sl = "sl.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = [".", "src"]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --cov=src --cov-report=html:doc/coverage --cov-report=term-missing"
+markers = [
+    "native: tests that compile and load a real native library (need a C compiler)",
+]
+
+[tool.coverage.run]
+source = ["sl"]
+branch = true
+omit = [
+    "tests/*",
+    "venv/*",
+    "doc/*",
+]
