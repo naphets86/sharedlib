@@ -2,8 +2,9 @@
 """Demo der sl-Kommandozeile: stellt jeden Befehl mit Erklaerung dar.
 
 Diese Demo zeigt nur an, was die Befehle tun. Sie wurde vom Autor 
-ausgefuehrt und getestet. Rueckmeldungen der Befehle werden unveraendert angezeigt; schlaegt ein Schritt fehl, wird der
-Fehler dargestellt und die Demo laeuft weiter.
+ausgefuehrt und getestet. Rueckmeldungen der Befehle werden unveraendert 
+angezeigt; schlaegt ein Schritt fehl, wird der Fehler dargestellt und die 
+Demo laeuft weiter.
 
 Verwendung:
     python demo.py                 # alle Schritte nacheinander
