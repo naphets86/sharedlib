@@ -6,8 +6,8 @@
  * leer definiert (dann muessen die Symbole anders sichtbar gemacht werden).
  */
 #if defined(__has_include)
-#  if __has_include("wsat_sl.h")
-#    include "wsat_sl.h"
+#  if __has_include("wsat.h")
+#    include "wsat.h"
 #  endif
 #endif
 
@@ -22,8 +22,9 @@ SL_EXPORT int wsat_init(void) {
     return 0; /* 0 = Erfolg */
 }
 
-SL_EXPORT void wsat_fini(void) {
+SL_EXPORT int wsat_fini(void) {
     g_initialised = 0;
+    return 0;
 }
 
 SL_EXPORT int wsat_solve(const int *xs, unsigned int n) {

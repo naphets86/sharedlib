@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Demo der sl-Kommandozeile: stellt jeden Befehl mit Erklaerung dar.
 
-Diese Demo zeigt nur an, was die Befehle tun. Sie wurde vom Autor NICHT
-ausgefuehrt oder getestet (Wunsch: nur Darstellung). Rueckmeldungen der
-Befehle werden unveraendert angezeigt; schlaegt ein Schritt fehl, wird der
+Diese Demo zeigt nur an, was die Befehle tun. Sie wurde vom Autor 
+ausgefuehrt und getestet. Rueckmeldungen der Befehle werden unveraendert angezeigt; schlaegt ein Schritt fehl, wird der
 Fehler dargestellt und die Demo laeuft weiter.
 
 Verwendung:
@@ -38,7 +37,7 @@ GEN = ROOT / "gen"
 OUT = ROOT / "out"
 META = ROOT / "wsat.json"
 META_FAT = ROOT / "wsat_fat.json"
-IMPL = ROOT / "demo" / "src" / "impl.c"
+IMPL = ROOT / "src" / "impl.c"
 
 # --------------------------------------------------------------------------
 # Darstellung

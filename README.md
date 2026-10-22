@@ -31,6 +31,14 @@ Siehe [Entwurf und Spezifikation](#entwurf-und-spezifikation) und
 * [Suchreihenfolge](#suchreihenfolge)
 * [Fehlermodell](#fehlermodell)
 * [Tests](#tests)
+* [Demo](#demo)
+  * [Voraussetzungen](#voraussetzungen)
+  * [Aufruf](#aufruf)
+  * [Die Schritte](#die-schritte)
+  * [Eingaben der Demo](#eingaben-der-demo)
+  * [Ausgaben im Einzelnen](#ausgaben-im-einzelnen)
+  * [Erzeugte Dateien](#erzeugte-dateien)
+  * [Hinweise](#hinweise)
 * [Status und Grenzen](#status-und-grenzen)
 * [Entwurf und Spezifikation](#entwurf-und-spezifikation)
 * [Wissenschaftliche Arbeit](#wissenschaftliche-arbeit)
@@ -84,8 +92,7 @@ pip install -e ".[dev]"
 
 Metadaten (`wsat.json`):
 
-```
-json
+```json
 {
   "name": "wsat", "version": "1.2.0", "abi_version": 1,
   "targets": [{"platform": "linux", "arch": "x86_64"}],
@@ -119,6 +126,8 @@ with sl.open("wsat") as lib:        # auf allen Plattformen identisch
 
 Die C-artige Statusschnittstelle liefert `(status, wert, fehlerinfo)` statt Ausnahmen:
 `sl_open`, `sl_symbol`, `sl_info`, `sl_close`.
+
+Einen vollständigen, kommentierten Durchlauf aller Befehle mit echten Ausgaben bietet die [Demo](#demo): `python demo/demo.py`.
 
 ## Kommandozeile
 
@@ -188,6 +197,193 @@ pytest
 Die meisten laufen mit einem Fake-Adapter ohne native Bibliotheken;
 Tests mit Marker `native` kompilieren und laden eine echte Bibliothek und benötigen einen
 C-Compiler auf einem POSIX-Host.
+
+## Demo
+
+Die Demo `demo/demo.py` führt in zehn Schritten durch die gesamte Kommandozeile und die Python-API,
+am Beispiel der kleinen Bibliothek **`wsat`** (`wsat_solve` summiert `n` ganze Zahlen). Jeder Schritt zeigt
+die Eingaben, den Befehl mit Prompt, die unveränderte Ausgabe (`stdout`/`stderr`), den Exit-Code und die Laufzeit.
+Schlägt ein Schritt fehl, wird der Fehler dargestellt und die Demo läuft weiter. Sie ist damit zugleich
+Einführung, Befehlsreferenz und Rauchtest des gesamten Weges von den Metadaten bis zur geladenen Bibliothek.
+
+### Voraussetzungen
+
+- Das Paket `sl` ist importierbar: entweder installiert (`pip install -e .`) oder über `PYTHONPATH`.
+  Die Demo ruft `python -m sl ...` mit dem aktuellen Interpreter in einem Unterprozess mit Arbeitsverzeichnis `demo/` auf;
+  ein relativer `PYTHONPATH` funktioniert daher nicht, es muss ein absoluter Pfad sein:
+
+  ```bash
+  export PYTHONPATH="$PWD/src"      # PowerShell: $env:PYTHONPATH = "$PWD\src"
+  ```
+- Ein C-Compiler (`gcc` oder `clang`) für die Schritte `build` und `pack`. Die Demo nutzt `gcc`, sofern
+  die Umgebungsvariable `CC` nichts anderes vorgibt.
+- Keine weiteren Abhängigkeiten. Ohne Compiler zeigen `build` und `pack` Fehler an, die übrigen Schritte
+  (`meta`, `gen`, `matrix`, `errors`, Anhang) laufen trotzdem.
+
+### Aufruf
+
+```bash
+python demo/demo.py                  # alle Schritte nacheinander
+python demo/demo.py --list           # Schritte auflisten
+python demo/demo.py --step gen       # nur einen Schritt (mehrfach angebbar, z. B. --step gen --step build)
+python demo/demo.py --dry-run        # Befehle nur anzeigen, nichts ausführen
+python demo/demo.py --no-color       # ohne ANSI-Farben (auch über die Variable NO_COLOR)
+python demo/demo.py --pause          # nach jedem Schritt auf Enter warten (für Vorführungen)
+```
+
+Die Schritte bauen aufeinander auf: `build` und `pack` brauchen die Dateien aus `gen`, `info` die Container aus
+`build` und `pack`, `api` den Container `wsat.sl`. Wer einzelne Schritte mit `--step` wählt, hält diese Reihenfolge
+selbst ein (z. B. `--step gen --step build --step info`); fehlende Vorarbeiten meldet die Demo als Hinweis.
+
+### Die Schritte
+
+| Schritt | Befehl / Inhalt | Was gezeigt wird |
+|---|---|---|
+| `intro` | Überblick | Alle fünf `sl`-Befehle, unterstützte Plattformen und Architekturen, Host-Target dieses Rechners (z. B. `linux:x86_64`) |
+| `meta` | `demo/wsat.json` | Die Metadatendatei Zeile für Zeile, Erläuterung jedes Feldes (`name`, `version`, `abi_version`, `targets`, `dependencies`, `exports`, `signatures`, `init`/`fini`) |
+| `gen` | `sl gen --meta wsat.json -o gen/` | Erzeugt Header, C-Quelle, CMake-Modul, Python-Binding und Build-Matrix und zeigt den Inhalt der erzeugten Dateien |
+| `matrix` | `sl matrix --meta ...` | Build-Matrix als JSON, einmal für ein Ziel (`wsat.json`) und einmal für vier Ziele (`wsat_fat.json`) |
+| `build` | `sl build ... -o out/wsat.sl` | Kompiliert für das Host-Target und packt Payload und Metadaten in einen `.sl`-Container |
+| `pack` | `sl pack ... -o out/wsat_packed.sl` | Baut den Payload vorab mit dem System-Compiler und packt das fertige Binary, ohne dass `sl` selbst kompiliert |
+| `info` | `sl info out/wsat.sl` | Metadaten und enthaltene Payloads beider Container |
+| `errors` | drei absichtlich fehlerhafte Aufrufe | Einheitliche Fehlerdarstellung `sl: error: ...` mit Exit-Code 2 |
+| `api` | Python-Beispiel mit `sl.open` und `sl.sl_open` | Dieselbe Bibliothek aus Python laden, Suche über `SL_PATH`, Statusschnittstelle ohne Ausnahmen |
+| `status` | Anhang | Tabelle aller `SLStatus`-Werte |
+
+### Eingaben der Demo
+
+| Datei | Rolle |
+|---|---|
+| `demo/wsat.json` | Metadaten mit einem Ziel (`linux:x86_64`), Export `wsat_solve`, Hooks `wsat_init`/`wsat_fini` |
+| `demo/wsat_fat.json` | Dieselben Metadaten mit vier Zielen (Linux x86_64 und aarch64, macOS aarch64, Windows x86_64); dient der Matrix-Ausgabe und als Vorlage für einen echten Fat-Container |
+| `demo/src/impl.c` | Implementierung: `wsat_solve` summiert die Eingabe, `wsat_init` setzt ein Flag, `wsat_fini` löscht es. Vor `wsat_init` liefert `wsat_solve` den Wert `-1`, so ist der Lebenszyklus sichtbar |
+
+`impl.c` bindet den von `sl gen` erzeugten Header `wsat.h` ein, sofern er im Include-Pfad liegt (`-I gen`). Der Header
+definiert das Makro `SL_EXPORT` (`__attribute__((visibility("default")))` bzw. `__declspec(dllexport)`). Das ist wichtig:
+`sl build` kompiliert mit `-fvisibility=hidden`, nur mit `SL_EXPORT` markierte Funktionen bleiben für den Loader auffindbar.
+
+### Ausgaben im Einzelnen
+
+**`sl gen`** schreibt sechs Dateien nach `demo/gen/`; alle sind reine Funktionen der Metadaten
+(gleiche Metadaten ergeben gleiche Dateien):
+
+| Datei | Inhalt |
+|---|---|
+| `wsat.h` | C-Header mit `SL_EXPORT`, `WSAT_ABI_VERSION` und den Deklarationen von `wsat_abi_version`, `wsat_sl_metadata`, `wsat_init`, `wsat_fini`, `wsat_solve` |
+| `wsat_sl.c` | C-Quelle mit den Metadaten als eingebettetem JSON sowie `wsat_abi_version()` und `wsat_sl_metadata()`; wird beim Bauen mitkompiliert |
+| `wsat.cmake` | CMake-Funktion `wsat_add_sl_library(<target> ...)`, die nach dem Bauen `sl pack` aufruft |
+| `wsat_binding.py` | Python-Binding mit `SIGNATURES` und `load()`; Zeiger werden als `c_void_p` abgebildet |
+| `build_matrix.json` | Build-Matrix (siehe unten) |
+| `wsat.json` | Kopie der Metadaten |
+
+**`sl matrix`** liefert je Ziel einen Eintrag mit Ausgabedatei, Compiler und Flags. Für `wsat_fat.json` (Ausgabe leicht gekürzt):
+
+```json
+[
+  {"platform": "linux",   "arch": "x86_64",  "output": "wsat.so",    "compiler": "cc",
+   "flags": ["-shared", "-fPIC", "-fvisibility=hidden"]},
+  {"platform": "linux",   "arch": "aarch64", "output": "wsat.so",    "compiler": "cc",
+   "flags": ["-shared", "-fPIC", "-fvisibility=hidden"]},
+  {"platform": "macos",   "arch": "aarch64", "output": "wsat.dylib", "compiler": "cc",
+   "flags": ["-dynamiclib", "-fvisibility=hidden", "-arch", "arm64"]},
+  {"platform": "windows", "arch": "x86_64",  "output": "wsat.dll",   "compiler": "cc",
+   "flags": ["-shared"]}
+]
+```
+
+Die Demo prüft zusätzlich, dass die Ausgabe gültiges JSON ist (`list, 1 Einträge` bzw. `list, 4 Einträge`).
+Die Matrix eignet sich als Vorlage für CI: pro Eintrag ein Job auf dem passenden Runner, anschließend `sl pack` mit allen Payloads.
+
+**`sl build`** und **`sl pack`** erzeugen aus denselben Metadaten je einen Container: `out/wsat.sl` (Build) und
+`out/wsat_packed.sl` (vorgebautes `libwsat.so`, gepackt). Der Unterschied: `build` ruft den Compiler selbst auf
+(mit den Flags der Matrix, `-I gen` und `-D WSAT_DEMO=1`), `pack` nimmt ein fertiges Binary. Für einen echten Fat-Container
+ergänzt man Payloads anderer Ziele, die Demo zeigt dies nur an:
+
+```bash
+sl build --meta wsat_fat.json --source gen/wsat_sl.c --source src/impl.c -I gen \
+         --extra windows:x86_64=prebuilt/wsat.dll -o out/wsat_fat.sl
+```
+
+**`sl info`** zeigt die Metadaten und die enthaltenen Payloads (hier `"payloads": ["linux:x86_64"]`):
+
+```json
+{
+  "abi_version": 1,
+  "dependencies": {},
+  "exports": ["wsat_solve"],
+  "fini": "wsat_fini",
+  "init": "wsat_init",
+  "name": "wsat",
+  "payloads": ["linux:x86_64"],
+  "runtime": "external",
+  "signatures": {"wsat_solve": "int wsat_solve(const int *xs, unsigned int n)"},
+  "targets": [{"arch": "x86_64", "platform": "linux"}],
+  "version": "1.2.0"
+}
+```
+
+**Fehlerdarstellung:** Alle Fehler der Kommandozeile erscheinen auf stderr als `sl: error: ...` mit Exit-Code 2:
+
+| Aufruf | Meldung |
+|---|---|
+| `sl info out/gibt_es_nicht.sl` | `sl: error: [Errno 2] No such file or directory: '...'` |
+| `sl info out/kein_container.sl` (Textdatei) | `sl: error: SL_ERR_INVALID_CONTAINER: bad magic number` |
+| `sl matrix --meta nicht_da.json` | `sl: error: [Errno 2] No such file or directory: '...'` |
+
+**Python-API:** Der letzte Schritt lädt den soeben gebauten Container mit gesetztem `SL_PATH=demo/out`:
+
+```python
+import ctypes, sl
+
+with sl.open("wsat") as lib:
+    solve = lib.symbol("wsat_solve",
+                       argtypes=[ctypes.POINTER(ctypes.c_int), ctypes.c_uint],
+                       restype=ctypes.c_int)
+    print("Summe:", solve((ctypes.c_int * 3)(1, 2, 3), 3))
+
+status, handle, err = sl.sl_open("gibt_es_nicht")
+print("Status:", status, "| failed_name:", getattr(err, "failed_name", None))
+```
+
+Ausgabe:
+
+```
+Summe: 6
+Status: 1 | failed_name: gibt_es_nicht
+```
+
+`sl.open` entpackt den Payload des Hosts und ruft `wsat_init` auf (sonst bliebe `wsat_solve` bei `-1`); beim Verlassen des
+`with`-Blocks läuft `wsat_fini`. `sl.sl_open` meldet das Scheitern als Status `1` (`NOT_FOUND`); `err.searched` enthält die
+durchsuchten Kandidaten in der Reihenfolge aus [Suchreihenfolge](#suchreihenfolge).
+
+### Erzeugte Dateien
+
+```
+demo/
+├── gen/                    erzeugt von sl gen
+│   ├── build_matrix.json
+│   ├── wsat.cmake
+│   ├── wsat.h
+│   ├── wsat.json
+│   ├── wsat_binding.py
+│   └── wsat_sl.c
+└── out/                    erzeugt von build, pack und errors
+    ├── libwsat.so          vorgebauter Payload (Windows: wsat.dll, macOS: libwsat.dylib)
+    ├── wsat.sl             Container aus sl build
+    ├── wsat_packed.sl      Container aus sl pack
+    └── kein_container.sl   absichtlich ungültige Datei für den Fehlerschritt
+```
+
+Beide Ordner werden bei jedem Lauf überschrieben und können gefahrlos gelöscht werden.
+
+### Hinweise
+
+- Das Beispiel `wsat.json` deklariert nur `linux:x86_64`. Auf anderen Hosts muss das Ziel in den Metadaten ergänzt werden
+  (siehe `wsat_fat.json`), bevor `build` und `pack` dort einen passenden Container erzeugen.
+- Die Texte der Demo sind absichtlich ASCII (ohne Umlaute), damit sie in jedem Terminal lesbar sind.
+- `No module named sl` in einem Schritt bedeutet: `sl` ist nicht installiert oder `PYTHONPATH` ist relativ.
+- `SL_ERR_INIT_FAILED: init entry point of 'wsat' missing` bedeutet: `wsat_init` ist nicht exportiert, meist weil
+  `SL_EXPORT` fehlt (Header nicht gefunden, `-I gen` vergessen).
 
 ## Status und Grenzen
 
