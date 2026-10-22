@@ -1,0 +1,371 @@
+\documentclass[a4paper,12pt,twoside]{report}
+% Webadressen (Repository-Verweise) dürfen auch an Bindestrichen umbrochen werden
+\PassOptionsToPackage{hyphens}{url}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[ngerman]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{ragged2e}
+\usepackage{rotating}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds}
+ 
+\emergencystretch=4em
+\sloppy
+\geometry{margin=2.5cm}
+
+% ---------- Tabellen: kein Überlauf über den Satzspiegel ----------
+% Spaltentypen: Y = dehnbare Spalte (tabularx), L{w} = Spalte fester Breite;
+% beide linksbündig mit Flattersatz, damit schmale Spalten nicht überlaufen.
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.1}
+% Unterstrich in Bezeichnern (\_) erlaubt einen Zeilenumbruch dahinter
+\DeclareRobustCommand{\_}{\textunderscore\allowbreak{}}
+
+ 
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[chapter]
+\newtheorem{beispiel}{Beispiel}[chapter]
+\newtheorem{satz}{Satz}[chapter]
+\newtheorem{lemma}{Lemma}[chapter]
+\newtheorem{bemerkung}{Bemerkung}[chapter]
+\newtheorem{korollar}{Korollar}[chapter]
+ 
+\setlist[itemize,1]{label=--}
+ 
+% ---------- Farben ----------
+\definecolor{mainblue}{RGB}{25, 70, 140}
+\definecolor{accentred}{RGB}{180, 50, 30}
+\definecolor{lightgray}{RGB}{245, 245, 248}
+\definecolor{darkgray}{RGB}{60, 60, 70}
+\definecolor{darkgreen}{RGB}{30, 100, 50}
+ 
+\hypersetup{colorlinks=true, linkcolor=mainblue, citecolor=accentred, urlcolor=mainblue}
+ 
+% Verweis auf ein Repository (Konto der Quellen: naphets86)
+\newcommand{\repo}[1]{\href{https://github.com/naphets86/#1}{\nolinkurl{github.com/naphets86/#1}}}
+ 
+% Roter Platzhalter für Aussagen, die einen weiteren Messlauf erfordern
+\newcommand{\offen}[1]{\textcolor{accentred}{\textbf{[#1]}}}
+ 
+% Kürzel für die Wiederverwendungen W1 bis W18 (Katalog in csubgraph.tex)
+\newcommand{\W}[1]{\textbf{W#1}}
+ 
+% Code-Highlighting
+\lstdefinelanguage{JSON}{
+	morestring=[b]",
+	stringstyle=\color{red},
+	morekeywords={true,false,null}
+}
+ 
+\lstset{
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue},
+	commentstyle=\color{gray},
+	stringstyle=\color{red},
+	numbers=left,
+	numberstyle=\tiny,
+	breaklines=true,
+	breakatwhitespace=false,
+	postbreak=\mbox{\textcolor{gray}{$\hookrightarrow$}\space},
+	frame=single,
+	columns=fullflexible,
+	literate=%
+	{Ö}{{\"O}}1 {Ä}{{\"A}}1 {Ü}{{\"U}}1 {ß}{{\ss}}1 {ü}{{\"u}}1 {ä}{{\"a}}1 {ö}{{\"o}}1
+	{Σ}{{$\Sigma$}}1 {→}{{$\rightarrow$}}1 {⊆}{{$\subseteq$}}1 {⊇}{{$\supseteq$}}1
+	{≥}{{$\geq$}}1 {≤}{{$\leq$}}1 {¬}{{$\neg$}}1 {∨}{{$\vee$}}1 {⊑}{{$\sqsubseteq$}}1
+}
+ 
+
+% ---------- zusätzliche Makros dieser Arbeit ----------
+\newcommand{\SL}{\texttt{.sl}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newtheorem{annahme}{Annahme}[chapter]
+\newtheorem{befund}{Befund}[chapter]
+\lstdefinelanguage{TOML}{morestring=[b]",morekeywords={true,false},morecomment=[l]{\#}}
+
+\title{\textbf{Das einheitliche Shared-Library-Format \SL\\Standardisierte Ladeprozedur}\\[0.4em]
+	\large Formale Analyse der Referenzimplementierung \texttt{sharedlib} und ihre Wiederverwendung in Gen-DB und Subgraph-SAT-Solver}
+\author{\textsc{Stephan Epp}\\ {\small \texttt{\textbf{M.Sc.}}}}
+\date{21. Oktober 2026}
+
+\begin{document}
+
+\pagenumbering{roman}
+\maketitle
+
+\begin{abstract}\noindent
+	Dieselbe Idee heißt unter Windows \texttt{.dll}, unter Linux \texttt{.so} und unter macOS \texttt{.dylib}. Dahinter stehen drei Binärformate, drei Lader und drei Regeln für Sichtbarkeit, Suchpfade und Fehlermeldungen. Diese Arbeit führt das Kapitel zum Laden der C/C++-Bibliothek aus der Arbeit zur Wiederverwendung des Subgraph Algorithmus (\texttt{csubgraph.tex}) fort und entwickelt es zu einer eigenständigen Untersuchung des Vorschlags eines einheitlichen Formats \SL\ mit \emph{einer} standardisierten, betriebssystemunabhängigen Ladeprozedur. Grundlage sind der Diskussionsentwurf (\texttt{proposal.md}) und die Referenzimplementierung im Repository \repo{sharedlib} (Python-Paket \texttt{sl}), die gelesen, aber nicht ausgeführt wurden. Die Arbeit gibt ein formales Modell von Container, Suchordnung, Lader und Plattformadapter an und beweist die tragenden Aussagen: die Byte-Rundreise des Containers und seine Nichtkanonizität, die Struktur und Umgebungsunabhängigkeit der Suchordnung, die Charakterisierung erfolgreichen Ladens durch Zyklenfreiheit, die Initialisierungs- und Freigabereihenfolge, die Invariante der Referenzzählung, die Ausnahmesicherheit des Rollbacks, die Möglichkeit eines Deadlocks durch die globale Sperre sowie die Konvexität der Versionsbereiche. Zwei Sätze begründen Entwurfsentscheidungen des Vorschlags: Kein einzelner Maschinencode-Block kann zwei Aufrufkonventionen bedienen (Nichtziel~1), und die Auswahl von Dateiversionen mit Rückverfolgung ist NP-vollständig, während der Lader mit eindeutiger Auflösung in Zeit $O(V+E)$ arbeitet. Eine Konformitätsmatrix vergleicht jede Forderung des Entwurfs mit dem Quelltext. Vierzehn Befunde mit Verbesserungsvorschlägen, eine Zusammenfassung und ein sehr ausführlicher Ausblick schließen die Arbeit ab.
+\end{abstract}
+
+\setcounter{tocdepth}{2}
+\tableofcontents
+\newpage
+\pagenumbering{arabic}
+
+% =====================================================================
+\part{Ausgangslage}
+% =====================================================================
+
+\chapter{Einführung}
+\label{chap:einleitung}
+
+Wer Software für mehrere Betriebssysteme ausliefert, muss dieselbe Bibliothek dreimal bauen, dreimal testen und dreimal dokumentieren. Das ist keine Eigenschaft der Aufgabe, sondern der Werkzeuge: Der Aufruf „lade die Bibliothek \texttt{wsat\_shim}, finde \texttt{wsat\_solve} und rufe sie auf“ ist auf allen Systemen derselbe, das Verfahren dahinter nicht. Die Arbeit zur Wiederverwendung des Subgraph Algorithmus \cite{epp2026csubgraph} hat dies an zwei Projekten gezeigt, die C++-Code über eine Shared Library aus Python nutzen: der Biologie-Datenbank \repo{gen-db} und dem Projekt \repo{subgraph-sat-solver-econ}. Beide enthalten Code, der nichts mit ihrer Fachaufgabe zu tun hat, sondern nur Plattformunterschiede überbrückt (Abschnitt~\ref{sec:evidenz}).
+
+Aus dieser Beobachtung entstand der Diskussionsentwurf eines einheitlichen Formats \SL\ mit standardisierter Ladeprozedur und, als Antwort darauf, das Projekt \repo{sharedlib} mit dem Python-Paket \texttt{sl}: Container, Lader-Kern, Plattformadapter, Codegenerierung, Build-Orchestrierung und Kommandozeile, 14~Module mit zusammen $1\,170$ Zeilen Quelltext und $1\,150$ Zeilen Tests.
+
+\section{Was aus der Vorarbeit übernommen wird}
+
+Das Kapitel zum Laden der C/C++-Bibliothek in \texttt{csubgraph.tex} beschreibt die zwei Verfahren von Gen-DB und \texttt{subgraph-sat-solver-econ} und skizziert das Konzept eines einheitlichen Ladeverhaltens. Diese Arbeit \emph{übernimmt} davon
+
+\begin{itemize}
+	\item die Dokumentvorlage (Klasse, Pakete, Farben, Satz-, Definitions- und Beweisumgebungen, Tabellenspaltentypen \texttt{Y} und \texttt{L\{w\}}, Listing-Stil),
+	\item die Einordnung in die sieben Wiederverwendungsformen (Abschnitt~\ref{sec:formen}) und die Kennzeichnung der Aussagearten (Abschnitt~\ref{sec:arten}),
+	\item die Fragestellung des Ladens: Welche Plattformunterschiede gibt es, was lässt sich vereinheitlichen, was nicht?
+\end{itemize}
+
+und \emph{führt aus}, was dort nur skizziert war: ein formales Modell, Beweise, die Konformitätsprüfung gegen den Quelltext, die Analyse von Sicherheit und Nebenläufigkeit, die Komplexität der Versionsauflösung sowie einen umfangreichen Ausblick.
+
+\begin{bemerkung}[Umfang der Vorlage]
+	\texttt{csubgraph.tex} bindet die Dateien \texttt{p1.tex}, \texttt{p2.tex} und \texttt{p3.tex} ein, die nicht Teil des Uploads waren. Das dortige Kapitel zum Laden konnte daher nicht Zeile für Zeile übernommen werden. Soweit es sich in der hochgeladenen Hauptdatei, in der Einleitung der Vorlage und im \texttt{proposal.md} wiederfindet, ist es hier wiederverwendet; zum Quelltext von Gen-DB und \texttt{subgraph-sat-solver-econ} liegen nur die Belege aus \texttt{proposal.md} Abschnitt~2.1 vor, und die Arbeit beschränkt sich darauf.
+\end{bemerkung}
+
+\section{Fragestellung}
+
+Die Arbeit beantwortet acht Fragen.
+
+\begin{enumerate}
+	\item Was unterscheidet das Laden von Bibliotheken unter Windows, Linux und macOS, und welche dieser Unterschiede sind reine Plattformarbeit ohne fachlichen Gehalt? (Kapitel~\ref{chap:ausgangslage})
+	\item Was bedeutet „betriebssystemunabhängig“ präzise, und welche Forderungen des Entwurfs lassen sich als Aussagen über Programme formulieren? (Kapitel~\ref{chap:grundlagen} und~\ref{chap:anforderungen})
+	\item Wie ist das \SL-Containerformat aufgebaut, und welche Eigenschaften (Rundreise, Integrität, Kanonizität) hat es? (Kapitel~\ref{chap:container})
+	\item Welche Suchordnung implementiert \texttt{sl}, wovon hängt sie ab, und welche Zusagen des Entwurfs hält sie? (Kapitel~\ref{chap:suche})
+	\item Wann ist das Laden erfolgreich, in welcher Reihenfolge laufen Initialisierung und Freigabe, und welche Garantien gelten für Referenzzählung, Rollback und Nebenläufigkeit? (Kapitel~\ref{chap:lader})
+	\item Wie weit trägt die Schichtung „nur der Adapter ist plattformspezifisch“? (Kapitel~\ref{chap:adapter})
+	\item Wie hängen Codegenerierung, Build und Metadaten zusammen, und welche Zusagen folgen daraus? (Kapitel~\ref{chap:codegen})
+	\item Warum löst der Lader keine Versionen auf, und was kostete es, wenn er es täte? (Kapitel~\ref{chap:versionen})
+\end{enumerate}
+
+\section{Arten von Aussagen in dieser Arbeit}
+\label{sec:arten}
+
+Wie in der Vorarbeit werden vier Arten von Aussagen unterschieden und im Text gekennzeichnet. Diese Arbeit führt den Quelltext \emph{nicht} aus; die Art „Geprüft“ der Vorarbeit wird deshalb durch „Berichtet“ ersetzt.
+
+\begin{itemize}
+	\item \emph{Bewiesen:} Sätze, Lemmata und Korollare mit vollständigem Beweis. Sie gelten für das in Kapitel~\ref{chap:grundlagen} definierte Modell; wo ein Beweis auf einer Annahme über die Umgebung beruht (etwa über \texttt{ctypes}), steht die Annahme ausdrücklich im Satz.
+	\item \emph{Aus dem Quelltext gelesen:} Eigenschaften, die sich aus dem hochgeladenen Stand von \texttt{sharedlib} ergeben (Signaturen, Standardwerte, Reihenfolgen). Sie sind durch Zeilenverweise belegt.
+	\item \emph{Berichtet:} Angaben der README und des Abdeckungsberichts unter \texttt{doc/coverage} (erzeugt am 21.~Oktober 2026). Sie wurden nicht neu ermittelt.
+	\item \emph{Offen:} Aussagen, die einen Lauf, einen nicht vorliegenden Quelltext oder eine Entscheidung erfordern, etwa \offen{offen}.
+\end{itemize}
+
+\section{Aufbau der Arbeit}
+
+Die Arbeit hat fünf Teile (Abbildung~\ref{abb:gliederung}).
+
+\begin{figure}[!ht]
+    \centering
+    \resizebox{0.97\textwidth}{!}{%
+        \begin{tikzpicture}[font=\small, >={Stealth[length=2mm]},
+            t/.style={draw=mainblue, rounded corners=2pt, fill=lightgray, align=center, text width=3.0cm, minimum height=1.6cm, inner sep=3pt}]
+            \node[t] (a) at (0,0) {\textbf{I Ausgangslage}\\1 Einführung\\2 Plattformen\\3 Grundlagen};
+            \node[t] (b) at (3.6,0) {\textbf{II Das Verfahren}\\4 Anforderungen\\5 Container\\6 Suche\\7 Lader\\8 Adapter};
+            \node[t] (c) at (7.2,0) {\textbf{III Umfeld}\\9 Codegenerierung\\10 Versionen\\11 Sicherheit\\12 Anwendung};
+            \node[t] (d) at (10.8,0) {\textbf{IV Prüfung}\\13 Berichtetes\\14 Befunde};
+            \node[t] (e) at (14.4,0) {\textbf{V Schluss}\\15 Zusammenfassung\\16 Ausblick};
+            \draw[->] (a)--(b); \draw[->] (b)--(c); \draw[->] (c)--(d); \draw[->] (d)--(e);
+        \end{tikzpicture}%
+    }
+    \caption{Gliederung der Arbeit. Teil~II ist der formale Kern, Teil~III stellt ihn in sein Umfeld, Teil~IV vergleicht mit dem Quelltext, Teil~V zieht Schlüsse.}
+    \label{abb:gliederung}
+\end{figure}
+
+Teil~I legt die Problemlage und das formale Modell fest. Teil~II untersucht die vier Bausteine des Verfahrens: Container, Suchordnung, Lader-Kern und Plattformadapter, jeweils mit Sätzen und Beweisen. Teil~III behandelt Codegenerierung, die Komplexität der Versionsauflösung, die Sicherheit und die Anwendung auf die zwei Beispielprojekte. Teil~IV stellt die Forderungen des Entwurfs dem Quelltext gegenüber und berichtet vierzehn Befunde. Teil~V fasst zusammen und gibt einen umfangreichen Ausblick.
+
+\chapter{Plattformunterschiede und Problemlage}
+\label{chap:ausgangslage}
+
+\section{Was sich heute unterscheidet}
+
+Tabelle~\ref{tab:plattformen} stellt die Unterschiede zusammen, die \texttt{proposal.md} aufführt.
+
+\begin{table}[!ht]
+	\centering
+	\small
+	\begin{tabularx}{\textwidth}{@{}L{3.0cm}YYY@{}}
+		\toprule
+		Aspekt & Windows & Linux & macOS \\
+		\midrule
+		Dateiendung & \texttt{.dll} & \texttt{.so} (oft \texttt{.so.1.2.3}) & \texttt{.dylib} (Plug-ins \texttt{.so}) \\[0.3em]
+		Präfix & keines (MSVC) oder \texttt{lib} (MinGW) & \texttt{lib} & \texttt{lib} \\[0.3em]
+		Binärformat & PE/COFF & ELF & Mach-O \\[0.3em]
+		Lade-API & \texttt{LoadLibrary} & \texttt{dlopen} & \texttt{dlopen} \\[0.3em]
+		Standard-Sichtbarkeit & nichts exportiert ohne \texttt{dllexport} & alles sichtbar & alles sichtbar \\[0.3em]
+		Abhängigkeits\-suche & DLL-Suchpfad, \texttt{PATH}, \texttt{add\_dll\_directory} & \texttt{RPATH}, \texttt{RUNPATH}, \texttt{LD\_LIBRARY\_PATH} & \texttt{@rpath}, \texttt{@loader\_path}, \texttt{DYLD\_*} \\[0.3em]
+		Initialisierung & \texttt{DllMain} & Konstruktoren, \texttt{.init\_array} & Konstruktoren \\[0.3em]
+		Fehlermeldung & \texttt{GetLastError} (Zahl) & \texttt{dlerror} (Text) & \texttt{dlerror} (Text) \\[0.3em]
+		Entladen & \texttt{FreeLibrary} & \texttt{dlclose} & \texttt{dlclose} \\
+		\bottomrule
+	\end{tabularx}
+	\caption{Plattformunterschiede beim Laden dynamischer Bibliotheken (Auswahl nach \texttt{proposal.md}, Abschnitt~2).}
+	\label{tab:plattformen}
+\end{table}
+
+\section{Belege aus den zwei Projekten}
+\label{sec:evidenz}
+
+Der Entwurf nennt sechs Stellen, an denen die Projekte Plattformcode enthalten; er enthält nach eigener Aussage keine Fachlogik. Die Angaben stammen aus \texttt{proposal.md} Abschnitt~2.1; der Quelltext der Projekte lag nicht vor.
+
+\begin{enumerate}
+	\item \texttt{src/native.py} in \texttt{subgraph-sat-solver-econ}: \texttt{library\_filename()} kennt vier Dateinamen (\texttt{wsat\_shim.dll}, \texttt{libwsat\_shim.dll}, \texttt{libwsat\_shim.so}, \texttt{libwsat\_shim.dylib}).
+	\item Dieselbe Datei ruft unter Windows \texttt{os.add\_dll\_directory} für jeden \texttt{PATH}-Eintrag auf.
+	\item \texttt{build\_shim()} sucht zusätzlich \texttt{libwsat\_shim.dll}, falls MinGW statt MSVC benutzt wurde.
+	\item \texttt{csubgraph\_shim.cpp} in \texttt{gen-db} definiert das Makro \texttt{CSUB\_EXPORT}.
+	\item \texttt{csubgraph\_native.py} in \texttt{gen-db} linkt die MinGW-Laufzeit unter Windows statisch.
+	\item Die README von \texttt{subgraph-sat-solver-econ} beschreibt den Bau in PowerShell-Syntax und nennt vier mögliche Dateinamen.
+\end{enumerate}
+
+Die Frage, wie das Laden in beiden Projekten im Einzelnen abläuft, wird nur so weit beantwortet, wie diese Belege reichen. Kapitel~\ref{chap:anwendung} zeigt, welche der sechs Stellen die Referenzimplementierung ersetzt.
+
+\section{Ziele und Nichtziele}
+
+Der Entwurf formuliert sieben Ziele: ein Namensschema \texttt{<name>.sl}; \emph{eine} standardisierte, betriebssystemunabhängige Ladeprozedur, die durch eine Spezifikation und nicht durch das Verhalten des Systemladers definiert ist; ein ausdrückliches, überall gleiches Exportmodell; ein Metadatenblock; eine Suchpfadregel mit festgelegter Rangfolge; ein Fehlermodell mit maschinenlesbaren Codes, das auch fehlende Abhängigkeiten benennt; Koexistenz mit bestehenden Bibliotheken. Nichtziele sind: gleicher Maschinencode für alle Systeme und Prozessoren, die kurzfristige Ablösung von PE, ELF und Mach-O, und die Standardisierung von C++-ABIs (stabile Grenze ist die C-ABI).
+
+Das erste Nichtziel ist keine Bescheidenheit, sondern eine Notwendigkeit. Der folgende Satz zeigt es in einem einfachen Maschinenmodell.
+
+\begin{definition}[Registermodell eines Aufrufs]
+	\label{def:registermodell}
+	Ein \emph{Code-Block} ohne Zugriff auf anderen Zustand als die Register ist eine Abbildung $B:\mathbb{Z}_{2^{64}}^{16}\to\mathbb{Z}_{2^{64}}$, die einem Registerzustand $r=(r_{\mathrm{rdi}},r_{\mathrm{rcx}},\ldots)$ den Inhalt des Ergebnisregisters zuordnet. Die Funktion $\mathrm{id}(x)=x$ für ein 64-Bit-Argument wird von $B$ unter einer \emph{Aufrufkonvention} $\kappa$ korrekt implementiert, wenn für jeden Registerzustand, in dem das erste Argument nach $\kappa$ den Wert $x$ hat, $B(r)=x$ gilt. Unter der Windows-x64-Konvention steht das erste Argument in $r_{\mathrm{rcx}}$, unter der System-V-x86-64-Konvention in $r_{\mathrm{rdi}}$.
+\end{definition}
+
+\begin{satz}[Kein universeller Code-Block]
+	\label{satz:nichtziel}
+	Es gibt keinen Code-Block $B$ im Sinne von Definition~\ref{def:registermodell}, der $\mathrm{id}$ sowohl unter der Windows-x64- als auch unter der System-V-x86-64-Konvention korrekt implementiert.
+\end{satz}
+
+\begin{proof}
+	Angenommen, $B$ implementiert $\mathrm{id}$ unter beiden Konventionen. Sei $r$ der Registerzustand mit $r_{\mathrm{rdi}}=1$, $r_{\mathrm{rcx}}=2$ und beliebigen übrigen Registern. Unter Windows x64 hat das erste Argument in $r$ den Wert $r_{\mathrm{rcx}}=2$; also muss $B(r)=2$ gelten. Unter System~V hat es in $r$ den Wert $r_{\mathrm{rdi}}=1$; also muss $B(r)=1$ gelten. Da $B$ eine Funktion ist, folgt $2=B(r)=1$, ein Widerspruch.
+\end{proof}
+
+Der Satz gilt für Code, der allein aus den Registern liest. Ein Block, der zur Laufzeit am Betriebssystem erkennt, welche Konvention gilt, ist ausgenommen; er muss dazu zusätzlichen Zustand lesen und wäre damit gerade die Art von Plattformlogik, die die Abstraktion verbergen soll. Hinzu kommt der Datenmodellunterschied: \texttt{long} hat unter Windows (LLP64) $32$, unter Linux (LP64) $64$ Bit, so dass schon die Quelltext-Bedeutung einer Signatur nicht übertragbar ist. Die Konsequenz zieht der Entwurf selbst: vereinheitlicht werden \emph{Schnittstelle, Container und Ladeprozedur}, nicht der Maschinencode. Der Container nimmt darum je Plattform und Architektur einen eigenen Payload auf (Kapitel~\ref{chap:container}).
+
+\section{Einordnung in die Wiederverwendungsformen}
+\label{sec:formen}
+
+Die Vorarbeit unterscheidet sieben Formen der Wiederverwendung (Portierung, Verallgemeinerung, Neuimplementierung als Fallback, Bibliotheksnutzung, Prozessnutzung, Infrastruktur, Begriffliche). Das Paket \texttt{sl} fällt unter die Form \emph{Infrastruktur}: Wiederverwendet wird nicht der Subgraph Algorithmus, sondern die Hülle, in der ein Algorithmus als Bibliothek ausgeliefert und geladen wird. Die Form hat damit die in der Vorarbeit beschriebene Eigenschaft: Änderungen am Algorithmus berühren sie nicht. Umgekehrt ändert sie die Form der \emph{Bibliotheksnutzung}: Gen-DB und \texttt{subgraph-sat-solver-econ} würden die Bibliothek nicht mehr mit \texttt{ctypes.CDLL} über plattformabhängige Dateinamen laden, sondern mit \texttt{sl.open}. Die Kopplung bleibt dieselbe (gleicher Prozess, C-ABI); das Auffinden der Datei wird austauschbar.
+
+\chapter{Formale Grundlagen}
+\label{chap:grundlagen}
+
+Dieses Kapitel legt das Modell fest, auf das sich alle Sätze beziehen. Es bildet den Quelltext von \texttt{sl} so ab, dass jede Definition einer benannten Funktion entspricht; die Zuordnung steht jeweils im Text.
+
+\section{Plattformen, Targets, Versionen}
+
+\begin{definition}[Plattformraum und Target]
+	Sei $\mathcal{P}=\{\mathrm{linux},\mathrm{macos},\mathrm{windows}\}$ und $\mathcal{A}=\{\text{x86\_64},\mathrm{aarch64},\mathrm{x86},\mathrm{arm}\}$. Ein \emph{Target} ist ein Paar $t=(p,a)\in\mathcal{P}\times\mathcal{A}$. Die Targets sind total geordnet durch die lexikographische Ordnung auf den Zeichenketten (Klasse \texttt{Target}, \texttt{order=True}).
+\end{definition}
+
+\begin{definition}[Version und Bereich]
+	Eine \emph{Version} ist ein Tripel $v\in\N^3$ (Zeichenkette \texttt{major.minor.patch} aus Dezimalziffern), geordnet lexikographisch: $v<w$ genau dann, wenn die erste Komponente, in der sie sich unterscheiden, bei $v$ kleiner ist. Eine \emph{Einschränkung} ist ein Paar $(\bowtie,b)$ mit $\bowtie\in\{\geq,\leq,=,>,<\}$ und $b\in\N^3$; ein \emph{Bereich} $\mathsf{s}$ ist eine endliche, durch Kommata getrennte Liste von Einschränkungen; die leere Liste (Zeichenketten \texttt{""} und \texttt{"*"}) ist erlaubt. $v$ \emph{erfüllt} $\mathsf{s}$ (\texttt{satisfies}), geschrieben $v\models\mathsf{s}$, wenn $v\bowtie b$ für jede Einschränkung gilt. $S(\mathsf{s})=\{v : v\models\mathsf{s}\}$.
+\end{definition}
+
+\section{Metadaten und Container}
+
+\begin{definition}[Metadaten]
+	\label{def:metadaten}
+	Ein \emph{Metadatensatz} ist ein Tupel $M=(\nu,v,\alpha,T,D,X,\Sigma,\rho,\iota,\varphi)$ aus Name $\nu$ (ein Bezeichner $\texttt{[A-Za-z\_][A-Za-z0-9\_]*}$), Version $v$, ABI-Version $\alpha\in\N_{\ge1}$, einer nichtleeren, duplikatfreien Targetmenge $T$, Abhängigkeiten $D:\mathrm{Namen}\rightharpoonup\mathrm{Bereiche}$, einer duplikatfreien Liste exportierter Bezeichner $X$, Signaturen $\Sigma:X\rightharpoonup\mathrm{Text}$ (nur für exportierte Symbole), Laufzeit $\rho\in\{\mathrm{embedded},\mathrm{external}\}$ und optionalen Hook-Namen $\iota,\varphi$ (Init und Fini). Diese Bedingungen prüft \texttt{Metadata.\_\_post\_init\_\_}.
+\end{definition}
+
+\begin{definition}[Container]
+	\label{def:container}
+	Ein \emph{Container} ist ein Paar $(M,P)$ aus einem Metadatensatz $M$ und einer Abbildung $P:T\to\{0,1\}^*$ von der Targetmenge von $M$ auf Byte-Folgen (die Payloads). Die Dateikodierung $\mathrm{pack}(M,P)$ und ihre Umkehrung $\mathrm{unpack}$ sind in Kapitel~\ref{chap:container} beschrieben.
+\end{definition}
+
+\section{Umgebung, Dateisystem und Orakel}
+
+Der Lader hängt von seiner Umgebung ab. Das Modell macht die Abhängigkeiten sichtbar.
+
+\begin{definition}[Umgebung des Laders]
+	\label{def:umgebung}
+	Eine \emph{Konfiguration} ist $\mathcal{K}=(E,R,A,h,\mathcal{F},\mathcal{O})$ mit
+	\begin{itemize}
+		\item einer Umgebungsabbildung $E$ von Variablennamen auf Zeichenketten (\texttt{env}),
+		\item dem optionalen Verzeichnis des Aufrufers $R$ (\texttt{requester\_dir}) und dem optionalen Anwendungsverzeichnis $A$ (\texttt{app\_dir}),
+		\item dem Flag $h$ (\texttt{hardened}),
+		\item einem Dateisystem $\mathcal{F}$: einer endlichen Menge regulärer Dateien mit Pfad, Inhalt und Rechten, und der Funktion $\mathrm{realpath}$,
+		\item einem \emph{Adapter-Orakel} $\mathcal{O}=(\Sigma_{\mathrm{sys}},\mathrm{map},\mathrm{lookup},\mathrm{unmap})$, das die vier plattformabhängigen Operationen des Adapters liefert: die Systemverzeichnisse $\Sigma_{\mathrm{sys}}(E)$, das Abbilden eines Payloads, das Auffinden eines Symbols und das Freigeben (Klasse \texttt{PlatformAdapter}).
+	\end{itemize}
+\end{definition}
+
+\begin{annahme}[Determinismus der Umgebung]
+	\label{ann:determinismus}
+	Während einer Operation ändern sich $E$, $\mathcal{F}$ und die Antworten von $\mathcal{O}$ nicht, und $\mathcal{O}$ antwortet auf gleiche Anfragen gleich.
+\end{annahme}
+
+Die Annahme ist für die Beweise nötig und für die Wirklichkeit nur näherungsweise richtig; ihre Verletzung (Wettlauf zwischen Prüfen und Verwenden, Abschnitt~\ref{sec:toctou}) ist ein eigener Befund.
+
+\begin{definition}[Lader-Zustand und Handle]
+	\label{def:zustand}
+	Ein \emph{Zustand} ist $s=(\Lambda,\sigma)$. $\Lambda$ ist eine endliche partielle Abbildung von Schlüsseln (Pfaden nach \texttt{realpath}) auf \emph{Handles}; ein Handle $g$ trägt Metadaten $M_g$, native Ressource, Liste $\mathrm{deps}(g)$ der Handles seiner Abhängigkeiten in Deklarationsreihenfolge und einen Zähler $\mathrm{rc}(g)\in\N$. $\sigma$ ist ein Keller von Schlüsseln (Feld \texttt{\_loading}), der Pfad der gerade geladenen Bibliotheken.
+\end{definition}
+
+\begin{definition}[Abhängigkeitsgraph]
+	\label{def:graph}
+	Für die Dateien $\mathcal{F}_{\mathrm{sl}}\subseteq\mathcal{F}$, die gültige Container sind, sei $\mathrm{res}(n,d)$ das Ergebnis von \texttt{locate} für den Namen $n$ mit Aufrufer-Verzeichnis $d$ (Kapitel~\ref{chap:suche}), als Schlüssel; $\bot$, falls keine Datei gefunden wird. Der \emph{Abhängigkeitsgraph} $G=(V,\to)$ hat $V=\mathcal{F}_{\mathrm{sl}}$ und für jeden Eintrag $(n,\mathsf{s})\in D_f$ eine Kante $f\xrightarrow{n,\mathsf{s}}\mathrm{res}(n,\mathrm{dirname}(f))$, sofern diese $\ne\bot$ ist. Mehrfachkanten werden mitgezählt. $G_r$ bezeichnet den von $r$ aus erreichbaren Teilgraphen, $V_r$ und $E_r$ seine Knoten- und Kantenmengen.
+\end{definition}
+
+\section{Notation für Aussagen über Abläufe}
+
+Ein \emph{Ablauf} ist die Folge der Aufrufe des Orakels und der Hooks, die eine Operation auslöst. Mit $\mathrm{init}(g)$ und $\mathrm{fini}(g)$ bezeichnen wir die Ereignisse „Init-Hook von $g$ ist aufgerufen“ und „Fini-Hook ist aufgerufen“, mit $\mathrm{map}(g)$ und $\mathrm{unmap}(g)$ die Aufrufe des Orakels. Für Ereignisse $e,e'$ bedeutet $e\prec e'$, dass $e$ im Ablauf vor $e'$ steht.
+
+\begin{figure}[!ht]
+	\centering
+	\begin{tikzpicture}[font=\small, >={Stealth[length=2.2mm]},
+		box/.style={draw=mainblue, fill=lightgray, align=center, text width=11.5cm, minimum height=1.1cm, inner sep=3pt}]
+		\node[box] (app) at (0,6.6) {\textbf{Anwendung / Sprachbindung}\\\texttt{sl.open}, \texttt{sl\_open}\quad (\texttt{binding}, \texttt{capi})};
+		\node[box] (core) at (0,4.8) {\textbf{Lader-Kern} (überall gleich)\\Auflösung, Validierung, Abhängigkeiten, Init/Fini, Zyklen, Referenzzählung\quad (\texttt{loader}, \texttt{search})};
+		\node[box, draw=accentred] (ad) at (0,3.0) {\textbf{Plattformadapter} (Orakel $\mathcal{O}$)\\\texttt{map\_payload}, \texttt{lookup}, \texttt{unmap}, \texttt{system\_dirs}\quad (\texttt{adapters})};
+		\node[box] (cont) at (0,1.2) {\textbf{Container}: Metadaten + Payload je Target\\(\texttt{container}, \texttt{metadata})};
+		\draw[->, thick] (app)--(core); \draw[->, thick] (core)--(ad); \draw[->, thick] (ad)--(cont);
+	\end{tikzpicture}
+	\caption{Schichten nach \texttt{proposal.md} Abschnitt~5.2 und README. Nach dem Entwurf liegt \emph{alles} Betriebssystemspezifische im roten Adapter; Kapitel~\ref{chap:adapter} prüft das.}
+	\label{abb:schichten}
+\end{figure}
+
+\include{sl_teil1}
+\include{sl_teil2}
+\include{sl_teil3}
+
+\begin{thebibliography}{99}
+\bibitem{epp2026csubgraph} S.~Epp: \emph{Subgraph Algorithmus -- Wiederverwendung. Von der Python-Referenz über csubgraph zu Gen-DB, Subgraph-SAT-Solver und Experimenten.} Wissenschaftliche Arbeit (\texttt{csubgraph.tex}), 10.~Oktober 2026.
+\bibitem{karp1972} R.~M. Karp: Reducibility among combinatorial problems. In: R.~E. Miller, J.~W. Thatcher (Hrsg.): \emph{Complexity of Computer Computations}, Plenum Press, 1972, S.~85--103.
+\bibitem{garey1979} M.~R. Garey, D.~S. Johnson: \emph{Computers and Intractability: A Guide to the Theory of NP-Completeness.} W.~H. Freeman, 1979.
+\bibitem{levine1999} J.~R. Levine: \emph{Linkers and Loaders.} Morgan Kaufmann, 1999.
+\bibitem{drepper2011} U.~Drepper: \emph{How To Write Shared Libraries.} 2011.
+\bibitem{tarjan1972} R.~E. Tarjan: Depth-first search and linear graph algorithms. \emph{SIAM Journal on Computing} 1(2), 1972, S.~146--160.
+\bibitem{lamport2002} L.~Lamport: \emph{Specifying Systems: The TLA+ Language and Tools for Hardware and Software Engineers.} Addison-Wesley, 2002.
+\bibitem{claessen2000} K.~Claessen, J.~Hughes: QuickCheck: a lightweight tool for random testing of Haskell programs. \emph{Proc.\ ICFP}, 2000.
+\bibitem{fips180} National Institute of Standards and Technology: \emph{FIPS PUB 180-4: Secure Hash Standard (SHS).} 2015.
+\bibitem{rfc8785} A.~Rundgren, B.~Jordan, S.~Erdtman: \emph{RFC 8785: JSON Canonicalization Scheme (JCS).} 2020.
+\bibitem{rfc8032} S.~Josefsson, I.~Liusvaara: \emph{RFC 8032: Edwards-Curve Digital Signature Algorithm (EdDSA).} 2017.
+\bibitem{cox2016} R.~Cox: \emph{Version SAT.} Blogbeitrag, 2016 (research.swtch.com/version-sat).
+\bibitem{abate2012} P.~Abate, R.~Di~Cosmo, R.~Treinen, S.~Zacchiroli: Dependency solving: a separate concern in component evolution management. \emph{Journal of Systems and Software} 85(10), 2012.
+\end{thebibliography}
+
+\end{document}

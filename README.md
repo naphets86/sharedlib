@@ -153,7 +153,7 @@ C-Compiler auf einem POSIX-Host.
 
 ## Erwerb
 
-Der Preis für diese Software beträgt 11.445.000,00 EUR.
+Der Preis für diese Software beträgt 15.455.000,00 EUR.
 
 ### Zahlungsinformationen
 
