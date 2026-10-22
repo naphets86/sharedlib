@@ -20,6 +20,8 @@ Weiterführend: Der Diskussionsentwurf des Formats liegt auf oberster Ebene des 
 Siehe [Entwurf und Spezifikation](#entwurf-und-spezifikation) und
 [Wissenschaftliche Arbeit](#wissenschaftliche-arbeit).
 
+**Neu:** Die [zweite Fassung der wissenschaftlichen Arbeit](#wissenschaftliche-arbeit-zweite-fassung) (18 Kapitel, 15 Befunde, eigene Prüfläufe, sehr ausführlicher Ausblick) liegt als einzelne LaTeX-Datei [`science/sharedlib.tex`](science/sharedlib.tex) mit [PDF](science/sharedlib.pdf) vor; die Prüfskripte stehen unter [`science/pruef/`](science/pruef/).
+
 ## Inhaltsverzeichnis 
 
 * [Architektur](#architektur)
@@ -32,6 +34,19 @@ Siehe [Entwurf und Spezifikation](#entwurf-und-spezifikation) und
 * [Status und Grenzen](#status-und-grenzen)
 * [Entwurf und Spezifikation](#entwurf-und-spezifikation)
 * [Wissenschaftliche Arbeit](#wissenschaftliche-arbeit)
+* [Wissenschaftliche Arbeit, zweite Fassung](#wissenschaftliche-arbeit-zweite-fassung)
+  * [Fragestellung](#fragestellung)
+  * [Gliederung der zweiten Fassung](#gliederung-der-zweiten-fassung)
+  * [Das formale Modell](#das-formale-modell)
+  * [Bewiesene Aussagen (Auswahl)](#bewiesene-aussagen-auswahl-1)
+  * [Befunde der zweiten Fassung (B1 bis B15)](#befunde-der-zweiten-fassung-b1-bis-b15)
+  * [Prüfung und Messung](#prüfung-und-messung)
+  * [Konformität von Proposal und Implementierung](#konformität-von-proposal-und-implementierung)
+  * [Anwendung auf Gen-DB und Subgraph-SAT-Solver](#anwendung-auf-gen-db-und-subgraph-sat-solver)
+  * [Ausblick (Kapitel 17)](#ausblick-kapitel-17)
+  * [Prüfskripte reproduzieren](#prüfskripte-reproduzieren)
+  * [Offene Punkte der zweiten Fassung](#offene-punkte-der-zweiten-fassung)
+  * [Kompilieren der zweiten Fassung](#kompilieren-der-zweiten-fassung)
 * [Erwerb](#erwerb)
 
 ## Architektur
@@ -197,6 +212,7 @@ C-Compiler auf einem POSIX-Host.
     abhängige Bibliothek auflösbar sind, hängt vom Modus des Systemladers ab (B6, nicht ausgeführt geprüft).
   - Der Hash schützt Payloads nur gegen Zufall; der Container ist nicht kanonisch und nicht signiert (B7).
   - `sl build` kennt nur GCC/Clang-Flags und keine Angabe von Sprachstandard oder Bibliotheken (B9).
+- Ergänzung aus der zweiten Fassung der Arbeit (Kapitel 13 bis 15, mit eigenen Prüfläufen unter Linux, Details im Abschnitt [Prüfung und Messung](#prüfung-und-messung)): Die Testsuite des Repositories wurde dabei nicht ausgeführt; die Angabe „126 Tests“ ist nicht nachgeprüft. Es gibt elf Testdateien mit 85 Testfunktionen (statisch gezählt, parametrisierte Fälle nicht eingerechnet). Der Abdeckungsbericht weist 99,5 % Anweisungs- und 98 % Zweigabdeckung aus. Fünfzehn Befunde mit Beleg und Verbesserung stehen in [Befunde der zweiten Fassung](#befunde-der-zweiten-fassung-b1-bis-b15); die drei schwersten betreffen die Sperre während `init` (B5), unaufgelöste native Symbolabhängigkeiten (B7) und die fehlende Authentizität der Metadaten (B10). Die Nummerierung weicht von der Liste oben (erste Fassung) ab.
 
 ## Entwurf und Spezifikation
 
@@ -299,6 +315,279 @@ pdflatex sharedlib.tex
 Benötigt werden eine TeX-Distribution mit `ngerman`, `lmodern`, `tikz`, `listings`, `tabularx`, `longtable`
 und `microtype`. Die beigelegte PDF wurde ohne die deutsche Silbentrennung gesetzt (XeLaTeX mit Latin Modern),
 weil diese Pakete in der Erzeugungsumgebung fehlten; mit `ngerman` kann der Zeilenumbruch abweichen.
+
+## Wissenschaftliche Arbeit, zweite Fassung
+
+> **Hinweis zu den Fassungen.** Der Abschnitt [Wissenschaftliche Arbeit](#wissenschaftliche-arbeit) oben
+> beschreibt die **erste Fassung** (75 Seiten, vier Dateien `sl_teil*.tex`, Befunde B1 bis B14,
+> Kapitelnummern 1 bis 16). Die **zweite Fassung** unten ist eine Neuerarbeitung auf Grundlage der
+> Vorarbeit `csubgraph` und des Entwurfs `proposal.md`: 18 Kapitel in einer einzigen LaTeX-Datei, 106 Seiten
+> (in der mitgelieferten Satzumgebung), 15 Befunde B1 bis B15 mit **anderer Nummerierung**, eigene
+> Prüfläufe am Quelltext (Skripte `pruef1.py` bis `pruef7.py`) und ein sehr ausführlicher Ausblick.
+> Kapitel- und Befundnummern in den älteren Abschnitten dieser README beziehen sich auf die erste Fassung;
+> die Nummern in diesem Abschnitt auf die zweite.
+
+**Titel:** „Einheitliche Shared Libraries (`.sl`) – Wiederverwendung des Ladeverfahrens. Von den Ladeverfahren in
+Gen-DB und `subgraph-sat-solver-econ` über das Proposal zur Referenzimplementierung `sharedlib`: formales Modell,
+Beweise, Prüfung und Ausblick“ (Stephan Epp, 21. Oktober 2026).
+
+Die Arbeit nimmt das Kapitel zum Laden der C/C++-Bibliothek aus der Vorarbeit
+([`csubgraph`](https://github.com/naphets86/csubgraph), dort Kapitel 13) wieder auf, führt es anhand des Proposals und
+dieser Referenzimplementierung weit aus und belegt alle tragenden Aussagen formal. Sie folgt der Vorlage
+`csubgraph.tex` (Teile, Theorem-Umgebungen `definition`, `beispiel`, `satz`, `lemma`, `bemerkung`, `korollar`,
+Kurzfassung, Inhaltsverzeichnis).
+
+| Datei | Inhalt |
+|---|---|
+| `science/sharedlib.tex` | Die gesamte Arbeit als **eine** kompilierbare Datei (Teile I bis V, Anhänge, Literatur) |
+| `science/sharedlib.pdf` | Die Arbeit als PDF (106 Seiten) |
+| `science/pruef/pruef1.py` bis `pruef7.py` | Prüfskripte der Arbeit (Zufalls-, Modell- und Reproduktionsläufe, Messung) |
+
+### Fragestellung
+
+Die Arbeit beantwortet zehn Fragen: Welche Plattformunterschiede betreffen das Laden, und welche davon sind
+Plattformcode ohne Fachlogik? Was lässt sich vereinheitlichen, und was beweisbar nicht? Wie lässt sich die
+Ladeprozedur als mathematisches Modell fassen? Welche Garantien folgen für Namensauflösung, Container,
+Versionsbereiche und den Loader-Kern? Wie weit ist der Kern vom Betriebssystem unabhängig? Was leisten
+Codegenerierung und Build? Was ändert sich in Gen-DB und `subgraph-sat-solver-econ`, und was kostet es? Wo
+weicht die Implementierung vom Proposal ab?
+
+### Gliederung der zweiten Fassung
+
+| Teil | Kapitel |
+|---|---|
+| I Ausgangslage | 1 Einführung, 2 Formale Grundlagen, 3 Projektlandschaft und Wiederverwendungsformen |
+| II Das Problem | 4 Der Ist-Zustand des Ladens, 5 Grenzen der Vereinheitlichung |
+| III Das Konzept: Modell und Beweise | 6 Das formale Modell der Ladeprozedur, 7 Namensauflösung und Suchordnung, 8 Container, Metadaten und Versionsbereiche, 9 Der Loader-Kern, 10 Plattformadapter, Binding und Schnittstelle, 11 Codegenerierung und Build |
+| IV Prüfung und Anwendung | 12 Anwendung auf Gen-DB und Subgraph-SAT-Solver, 13 Prüfung und Messung, 14 Befunde, 15 Konformität von Proposal und Implementierung |
+| V Schluss | 16 Zusammenfassung, 17 Ausblick |
+| Anhang | A Beweisindex (jede Aussage mit Quelltextbezug und Prüfung), B Prüfskripte |
+
+### Das formale Modell
+
+Das Modell besteht aus einem Dateisystem als partieller Abbildung von Pfaden auf Bytes, der Umgebung, einer
+Konfiguration `C` und einem Zustand `Γ = (L, S)` aus der Ladetabelle `L` (Schlüssel auf Knoten
+`(μ, d, rc, ν)`: Metadaten, Abhängigkeiten, Referenzzähler, native Referenz) und dem Stapel `S` der gerade ladenden
+Bibliotheken. Der Plattformadapter ist ein Parameter mit den Operationen `lookup`, `map_payload`, `system_dirs`,
+`unmap`. Eine Invariante aus vier Teilen (I1 bis I4) hält fest, dass der Referenzzähler jedes Knotens der Summe aus
+Verweisen von Clients, von abhängigen Knoten und von noch laufenden Öffnungen („unterwegs“) entspricht. Die Sätze
+über Rollback, Lebenszyklus und Fehlerursache sind Folgerungen aus dieser Invariante.
+
+### Bewiesene Aussagen (Auswahl)
+
+Das Beweisverzeichnis im Anhang A listet jede Aussage mit Quelltextbezug und stützender Prüfung. Eine Auswahl:
+
+| Gegenstand | Aussage |
+|---|---|
+| Grenzen | Maschinencode lässt sich zwischen Aufrufkonventionen nicht vereinheitlichen (Windows x64 `rcx` gegen System V `rdi`); Typbreiten (LP64, LLP64, ILP32) verlangen feste Breiten an der Schnittstelle |
+| Suche | Die Kandidatenliste hat eine feste Struktur; **erster Treffer gewinnt**; die Suche hängt unter einer Bedingung **nicht vom Arbeitsverzeichnis** ab; der gehärtete Modus schließt `SL_PATH` aus (fail closed) |
+| `SL_PATH` | **Exakte Rundreisebedingung**: `Dec(Enc(L)) = L` genau dann, wenn kein Eintrag die Laufwerksform `X:\…` hat und kein Eintrag das Trennzeichen enthält; sonst gibt es Gegenbeispiele |
+| Versionen | Versionsbereiche über `N³` (lexikographisch) sind **konvex**; die kleinste erfüllende Version ist die untere Grenze, falls der Bereich nicht leer ist |
+| Container | `unpack ∘ pack = id` (Rundreise), Injektivität von `pack`, Integrität der Payloads durch SHA-256, **keine Authentizität** der Metadaten, Totalität des Lesers (nur `SLError` oder Erfolg), Nichtkanonizität (angehängte Bytes ändern nichts) |
+| Loader | **Terminierung** mit höchstens `|E_r| + 1` Aufrufen; **Korrektheit und Vollständigkeit der Zykluserkennung**; Invariante der Referenzzählung; **Atomarität (Rollback)** eines fehlgeschlagenen Öffnens; Init nach Abhängigkeiten und Fini vor ihnen (Abhängige zuerst entladen); Fehlerkausalität (`failed_name` nennt den Verursacher für fehlende Abhängigkeiten) |
+| Adapter | Der Kern ist **adapterparametrisch**, aber nicht hostunabhängig (Pfadkonvention des Hosts, Dateisystem); Öffnen kostet linear in der Dateigröße; der Aufruf gebundener Funktionen hat keinen Zusatzaufwand |
+| Codegenerierung | Signaturparser korrekt für die Teilsprache der Metadaten; Typabbildung; Build-Matrix; Fat-Container |
+| Anwendung | Migrationssatz: Unter vier Bedingungen M1 bis M4 führen `ctypes.CDLL(p)` und `sl.open(n)` denselben nativen Code aus; Speicherbedarf eines Prozess-Pools |
+| Ausblick | Korrektheit einer SAT-Kodierung der Abhängigkeitsauflösung (vollständig bewiesen); Authentizität des Containers mit Merkle-Struktur (Beweisskizze) |
+
+Insgesamt enthält die Arbeit mehr als fünfzig nummerierte Sätze, Lemmata und Korollare. Jede Aussage trägt eine
+Kennzeichnung: *bewiesen*, *aus dem Quelltext gelesen*, *geprüft* oder *offen* (im PDF rot).
+
+### Befunde der zweiten Fassung (B1 bis B15)
+
+Jeder Befund hat Beobachtung, Beleg (Satz, Quelltext oder Reproduktion), Folge und Verbesserungsvorschlag
+(Kapitel 14). Die Schwere ist eine Einschätzung des Verfassers.
+
+| Nr. | Befund | Beleg | Schwere |
+|---|---|---|---|
+| B1 | `SL_PATH`: Die Laufwerksheuristik macht die Rundreise formabhängig | bewiesen, reproduziert | mittel |
+| B2 | `SL_PATH`: Der Semikolonmodus ist nicht rundreisefähig; der Modus hängt vom Inhalt ab | bewiesen, reproduziert | mittel |
+| B3 | Versionsbereiche des Proposals (`>=1.2,<2`) werden abgelehnt (dreiteilige Versionen verlangt) | geprüft | niedrig |
+| B4 | Die Suche hängt vom Host ab (`isabs`, Arbeitsverzeichnis bei relativen Pfaden) | bewiesen, reproduziert | mittel |
+| B5 | Die Sperre während `init` blockiert nebenläufiges `open` (**Widerspruch zum Proposal**) | reproduziert | hoch |
+| B6 | `symbol` und `close` sind nicht atomar verschränkt | aus dem Quelltext | mittel |
+| B7 | **Native Symbolabhängigkeit** zwischen Bibliotheken bleibt unaufgelöst | reproduziert | hoch |
+| B8 | Instanz je Datei statt je Name; doppeltes `close` desselben Handles wird angenommen | reproduziert | mittel |
+| B9 | Das Metadatenfeld `runtime` (`"external"`) hat im Loader keine Semantik | aus dem Quelltext | niedrig |
+| B10 | Metadaten **nicht authentifiziert**; `failed_name` leer bei Containerfehlern von Abhängigkeiten; Rekursionsfehler bei tiefem JSON; nichtkanonische Container | bewiesen, reproduziert | hoch |
+| B11 | Temporäre Dateien bleiben bei Prozessende ohne `close` liegen | reproduziert | mittel |
+| B12 | Init/Fini-Haken sind Symbole der Bibliothek, aber nicht auffindbar (Spezifikationslücke) | reproduziert | niedrig |
+| B13 | Codegenerator: `long` nicht zurückgewiesen, Warnungen (`-Wunused-const-variable`), Build-Matrix mit gleichem Dateinamen für verschiedene Ziele, Lücken im CMake-Modul | reproduziert | mittel |
+| B14 | Binding: Funktionsobjekte nicht stabil (`L["f"] is L["f"]` ist falsch), `argtypes` wird geteilt, Namen mit doppelten Unterstrichen nur per Elementzugriff | reproduziert | niedrig |
+| B15 | Der **Legacy-Modus** des Proposals (gewöhnliche `.dll`/`.so`/`.dylib` über dieselbe API) fehlt | aus dem Quelltext | mittel |
+
+Hoch gewichtet sind B5, B7 und B10: Korrektheit unter Nebenläufigkeit, das Kernversprechen der
+Abhängigkeitsauflösung und die Vertrauensgrenze. Die übrigen Befunde sind lokal behebbar; keine der
+Verbesserungen ändert das Modell. Kernideen der Verbesserungen:
+
+- **B1/B2/B4:** eine einzige Kodierung für alle Plattformen mit Fluchtzeichen (`\\` für `\`, `\:` für das
+  Trennzeichen), keine Laufwerksheuristik; dann gilt `Dec ∘ Enc = id` ohne Vorbedingung. Absolutheit wird nach der
+  Konvention des Ziels entschieden, nicht des Hosts.
+- **B5:** Status je Schlüssel (`absent`, `init`, `ready`, `fini`) und Bedingungsvariable; `init` läuft **ohne**
+  globale Sperre; Zyklen über zwei Threads brauchen eine globale Ordnung (Auflösung der gesamten
+  Abhängigkeitsmenge vor jedem `init`).
+- **B7:** Variante V2: alle Payloads einer Abhängigkeitsgruppe in **ein** Verzeichnis mit den Namen extrahieren,
+  die der native Lader erwartet (alternativ `RTLD_GLOBAL` oder ein eigener Abbilder).
+- **B10:** Hash über Kopf, Metadaten, Tabelle und Payloads (Merkle-Struktur), Signatur über die Wurzel,
+  Tiefenschranke beim Parsen, Kanonizität erzwingen (Länge gleich Dateigröße).
+
+### Prüfung und Messung
+
+Alle Läufe geschahen unter Linux (Python 3.13, GCC 13.3); Zufallsprüfungen haben feste Startwerte.
+
+| Nr. | Gegenstand | Ergebnis |
+|---|---|---|
+| P1 | `SL_PATH`-Rundreise | 300 000 zufällige Listen, 0 Abweichungen von der Bedingung des Satzes |
+| P2, P2b | Versionsbereiche | 3 000 beziehungsweise 20 000 Zufallsbereiche, 0 Verletzungen (Konvexität, kleinste Version) |
+| P3 | Container-Rundreise | 2 000 Zufallscontainer, `unpack ∘ pack = id` |
+| P3b | Bitänderungen | alle 80 Änderungen im Datenbereich erkannt; bei Kopf, Metadaten und Tabelle 4 von 439 als andere Metadaten akzeptiert |
+| P3c, P3d | Totalität, Kanonizität | 20 000 Mutationen nur `SLError` oder Erfolg; `RecursionError` bei 100 000 Klammern; angehängte Bytes ohne Wirkung |
+| P4 | Signaturparser | 100 000 Signaturen, 0 Abweichungen |
+| P5 | Modellläufe des Loaders | 3 000 Läufe mit zufälligen Graphen (Zyklen, defekte Dateien): 12 181 erfolgreiche und 4 621 gescheiterte Öffnungen, 22 559 Invariantenprüfungen **ohne Verletzung**, Rollback in 4 621 von 4 621 Fällen |
+| P6 | Adapterzugriffe | statische Analyse des Syntaxbaums von `loader.py` und `search.py` bestätigt die Parametrizität |
+
+**Kosten des Öffnens** (gemessen in drei Läufen, Median von je 300 Wiederholungen; Bibliotheken von 15 KiB bis
+4 MiB): `ctypes.CDLL` ist von der Dateigröße unabhängig (etwa 34 bis 60 µs); `sl.open` wächst linear mit der
+Größe, `t(s) ≈ a + b·s` mit `a = 0,16 bis 0,39 ms` und `b = 1,0 bis 3,4 ms/MiB` (R² ≥ 0,999 in jedem Lauf, die
+Steigung streut zwischen den Läufen um den Faktor 3,4). Der Aufruf einer gebundenen Funktion kostet nicht mehr
+(Größenordnung 300 bis 650 ns, ohne gleichbleibenden Unterschied). Für Bibliotheken, die einmal je Prozess geöffnet
+und danach oft aufgerufen werden, ist das gering; für Dienste, die je Anfrage öffnen, wäre es der dominierende
+Posten.
+
+**Grenzen der Prüfung:** Nur Linux; die Adapter für macOS und Windows sind nicht ausgeführt. Die Modellläufe
+nutzen einen Fake-Adapter (wie die Suite des Repositories). Die Testsuite des Repositories wurde für die Arbeit
+**nicht ausgeführt** (`pytest` ließ sich in der Arbeitsumgebung nicht installieren); die 126 Tests des Abzeichens
+oben sind nicht nachgeprüft. Der mitgelieferte Abdeckungsbericht (Windows-Lauf) weist 780 Anweisungen mit 4 nicht
+erreichten und 200 Zweige mit 4 teilweise gedeckten aus; das entspricht 99,5 % Anweisungs- und 98 %
+Zweigabdeckung und weicht von der Angabe „Zeilenabdeckung 100 %, Zweigabdeckung nicht gemessen“ im Abschnitt
+[Status und Grenzen](#status-und-grenzen) ab.
+
+### Konformität von Proposal und Implementierung
+
+Kapitel 15 stellt 17 Zusagen des Proposals der Implementierung gegenüber: **5 erfüllt**, **10 teilweise erfüllt**
+(jeweils mit Befund), **2 fehlend** (Legacy-Modus, entkoppelte Initialisierung).
+
+| Zusage des Proposals | Stand |
+|---|---|
+| Container mit Metadaten, Tabelle, SHA-256 je Payload | teilweise (Metadaten nicht gehasht, B10) |
+| Feste Suchordnung, nie Arbeitsverzeichnis, `PATH`, `LD_LIBRARY_PATH` | teilweise (Host-Abhängigkeit, B4) |
+| Gehärteter Modus fail closed | teilweise (Eigentumsprüfung fehlt) |
+| Abhängigkeiten vor der Bibliothek auflösen | teilweise (native Symbole nicht, B7) |
+| Zyklen erkennen | erfüllt |
+| Referenzzählung, Entladen beim letzten `close` | teilweise (doppeltes `close`, B8) |
+| Atomares Öffnen | erfüllt |
+| Init: Abhängigkeiten zuerst, Fini zuletzt | erfüllt |
+| `failed_name` nennt den Verursacher | teilweise (B10) |
+| Nebenläufige Öffnungen sperren sich nicht bei `init` | **fehlt** (B5) |
+| Eine Instanz je Bibliothek | teilweise (je Datei, B8) |
+| Versionsbereiche `>=1.2,<2` | teilweise (B3) |
+| Feste Typbreiten in der Schnittstelle | teilweise (B13) |
+| Codegenerierung (Header, C-Quelle, CMake, Binding, Matrix) | teilweise (B13) |
+| Plattformadapter austauschbar | erfüllt (Linux belegt) |
+| Legacy-Modus | **fehlt** (B15) |
+| Keine Laufzeitabhängigkeiten | erfüllt |
+
+### Anwendung auf Gen-DB und Subgraph-SAT-Solver
+
+Kapitel 12 vergleicht die zwei Ladeverfahren der Projekte (vier Dateinamen je `sys.platform`, `add_dll_directory`,
+Makro `CSUB_EXPORT`, statisch gelinkte MinGW-Laufzeit) mit der einheitlichen Schicht. Kern ist der
+**Migrationssatz**: Erfüllt die Migration M1 bis M4, so führen `CDLL(p)` und `sl.open(n)` denselben nativen Code aus.
+
+- **M1** Der Payload für das Ziel des Hosts im Container ist byteweise gleich der bisherigen Bibliothek.
+- **M2** Der Payload hängt nicht von seinem eigenen Ablageort ab (kein `$ORIGIN` im `RUNPATH`, kein `@loader_path`).
+- **M3** Der Payload braucht von anderen Bibliotheken nur solche, die das System des Hosts findet.
+- **M4** Die Suchordnung findet den Container am vorgesehenen Ort.
+
+Dazu kommen ein Zählsatz für Testfälle (Plattformen mal Architekturen mal Fehlerklassen), ein Speichermodell für
+den Prozess-Pool von Gen-DB (`N · s` bei getrennter Extraktion je Prozess) und ein Migrationsplan mit
+Abnahmekriterien. Fünf neue Wiederverwendungen **W19 bis W23** ergänzen die Systematik der Vorarbeit (W1 bis
+W18); sie sind Kandidaten, die Migration ist nicht durchgeführt.
+
+### Ausblick (Kapitel 17)
+
+Der Ausblick leitet aus Befunden, offenen Stellen und Entwurfsfragen ein Arbeitsprogramm in vier Stufen ab
+(Aufwandsschätzungen des Verfassers):
+
+| Stufe | Vorhaben | Aufwand |
+|---|---|---|
+| A | Befunde B1 bis B15 beheben, je ein Regressionstest; Testsuite ausführen; Windows und macOS prüfen | Tage bis Wochen |
+| B | Verbessertes Sperrprotokoll (B5) mit Neubeweis und Modellprüfung; Konformitätssuite aus dem Modell; native Abhängigkeiten lösen (B7); authentifizierter Container mit Signaturen (B10) | Wochen |
+| C | Resolver mit SAT oder PubGrub; Loader-Kern in C oder Rust; Bindings für weitere Sprachen; mechanisierte Beweise (Coq, Isabelle, TLA⁺) | Monate |
+| D | Eigener Abbilder für ELF, PE und Mach-O; Standardisierung und Governance | Jahre |
+
+Wichtige Linien:
+
+- **Mechanisierte Beweise:** Zustandsmaschine in TLA⁺ oder Alloy (erschöpfende Prüfung bis zu einer Schranke),
+  Beweisassistent für beliebig große Graphen (vier Beweisverpflichtungen: Sicherheit, Lebendigkeit, Atomarität,
+  Ordnung), Verfeinerung zu einem verifizierten Kern in Rust oder C, dauerhaftes Fuzzing des Container-Lesers.
+- **Spezifikation und Konformitätssuite:** normative Fassung in drei Schichten (Format, Verfahren, Schnittstelle);
+  Testvektoren aus dem Modell, die jede Implementierung einliest; Klärung der Identität einer Instanz (Datei,
+  Name oder Inhaltshash).
+- **Laden:** native Abhängigkeiten (drei Varianten V1 bis V3), inhaltsadressierte gemeinsame Ablage, Laden ohne
+  Extraktion über `memfd_create` und seitenausgerichtete Payloads, eigener Abbilder, Threads und Entladen,
+  C++-Ausnahmen über die Grenze.
+- **Nebenläufigkeit:** Protokoll ohne Sperre während `init` mit Beweisverpflichtungen, feinere Sperren,
+  Linearisierbarkeit.
+- **Sicherheit:** Merkle-Struktur und Signatur über den ganzen Container, gehärteter Modus mit Eigentum und
+  Rechten (TOCTOU-sicher über Dateideskriptoren), Isolation (Prozess, Sandbox, WebAssembly), reproduzierbare
+  Builds und SBOM.
+- **Abhängigkeitsauflösung:** SAT-Kodierung mit bewiesener Korrektheit, kompaktere Ordnungskodierung aufgrund der
+  Konvexität der Versionsbereiche, Anschluss an die Subgraph-SAT-Kette der Vorarbeit.
+- **Weitere Sprachen und Betrieb:** C++, Rust, Go, Java, C#; WebAssembly-Komponenten; Build-Matrix mit eigenem
+  Ausgabepfad je Ziel; Anschluss an Paketverwaltungen (PyPI, Conan, vcpkg, Cargo, OCI).
+- **Standardisierung:** Referenzimplementierung mit offener Spezifikation, Zweitimplementierung, Regeln für
+  Änderungen, Lizenz und Medientyp; jeder Änderungsvorschlag nennt, welche Sätze des Modells er berührt.
+- **Bedrohungen der Gültigkeit:** Modell gegen Wirklichkeit, nur eine Plattform, ein Prüfer, Annahmen des
+  Adaptervertrags, kleine Stichproben, fehlender Wortlaut des Vorarbeits-Kapitels.
+
+Der empfohlene nächste Schritt ist ein Änderungssatz aus drei Teilen: (1) Container mit Hash über alle Teile und
+erzwungener Kanonizität (B10), solange es kaum Container gibt, (2) Pfadkodierung mit Fluchtzeichen (B1, B2),
+(3) die Testvektoren aus P3 und P5 als Dateien für künftige Implementierungen.
+
+### Prüfskripte reproduzieren
+
+Die Skripte benutzen nur die Standardbibliothek und das Paket `sl`. Aufruf aus dem Verzeichnis der Skripte, mit
+isoliertem Interpreter, damit keine Datei des Arbeitsverzeichnisses importiert wird:
+
+```bash
+python3 -I pruefN.py <Pfad zu sharedlib/src>
+```
+
+| Skript | Inhalt |
+|---|---|
+| `pruef1.py` | Pfadkodierung (P1), Versionen (P2, P2b), Container (P3 bis P3d), `ctypes`-Zwischenspeicher |
+| `pruef2.py` | modellbasierter Loader-Test (P5), Parametrizität (P6), Messung der Öffnungskosten |
+| `pruef3.py` | Diamant, doppeltes `close`, Verlust von Handles |
+| `pruef4.py` | Signaturparser (P4), native Abhängigkeit, Abdeckung, Testzählung |
+| `pruef5.py` | doppeltes `close`, `failed_name`, Verklemmung |
+| `pruef6.py` | Codegenerator: Warnungen, Matrix, Ziele |
+| `pruef7.py` | Versionssatz Teil (b) |
+
+Die Läufe sind mit festen Startwerten wiederholbar; Laufzeiten und Messwerte hängen von der Maschine ab.
+
+### Offene Punkte der zweiten Fassung
+
+- Der Wortlaut von Kapitel 13 der Vorarbeit (Datei `p3.tex`) lag bei der Erstellung nicht vor; das Kapitel wurde
+  aus dem Proposal rekonstruiert. Der Abgleich steht aus.
+- Die Testsuite dieses Repositories (126 Tests laut Abzeichen) wurde nicht ausgeführt.
+- Windows und macOS wurden nicht getestet; die Quellen von Gen-DB, `subgraph-sat-solver-econ` und `csubgraph`
+  wurden nicht erneut geprüft, ihre Angaben stammen aus der Vorarbeit.
+- Das Protokoll von B5 braucht einen Neubeweis der Invariante.
+- Die Messungen stammen aus drei Läufen mit großer Streuung und sind Größenordnungen.
+
+### Kompilieren der zweiten Fassung
+
+```bash
+cd science
+pdflatex sharedlib.tex   # dreimal ausführen, damit Verzeichnisse und Verweise stimmen
+pdflatex sharedlib.tex
+pdflatex sharedlib.tex
+```
+
+Benötigt werden eine TeX-Distribution mit `ngerman`, `lmodern`, `tikz`, `listings`, `tabularx`, `longtable`,
+`booktabs`, `float`, `enumitem` und `microtype`. Die beigelegte PDF wurde mit XeLaTeX und Ersatzschriften (DejaVu)
+ohne deutsche Silbentrennung gesetzt, weil `ngerman` und `lmodern` in der Erzeugungsumgebung fehlten; mit
+`ngerman` kann der Zeilenumbruch abweichen.
 
 ## Erwerb
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sharedlib"
-version = "2.0.0"
+version = "3.0.0"
 description = "Reference implementation of the unified shared library (.sl) layers: container, standardized loader, platform adapters, code and build generation"
 readme = "README.md"
 requires-python = ">=3.11"
