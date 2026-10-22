@@ -20,7 +20,7 @@ _ARCH_ALIASES = {
 
 def current_platform(sys_platform=None) -> str:
     raw = sys_platform or sys.platform
-    if raw.startswith("linux"):
+    if raw.startswith(("linux", "android")):
         return "linux"
     mapping = {"darwin": "macos", "win32": "windows", "cygwin": "windows"}
     if raw not in mapping:
