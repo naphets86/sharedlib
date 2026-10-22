@@ -20,7 +20,7 @@ Weiterführend: Der Diskussionsentwurf des Formats liegt auf oberster Ebene des 
 Siehe [Entwurf und Spezifikation](#entwurf-und-spezifikation) und
 [Wissenschaftliche Arbeit](#wissenschaftliche-arbeit).
 
-**Neu:** Die [zweite Fassung der wissenschaftlichen Arbeit](#wissenschaftliche-arbeit-zweite-fassung) (18 Kapitel, 15 Befunde, eigene Prüfläufe, sehr ausführlicher Ausblick) liegt als einzelne LaTeX-Datei [`science/sharedlib.tex`](science/sharedlib.tex) mit [PDF](science/sharedlib.pdf) vor; die Prüfskripte stehen unter [`science/pruef/`](science/pruef/).
+**Neu:** Die [zweite Fassung der wissenschaftlichen Arbeit](#wissenschaftliche-arbeit-zweite-fassung) (18 Kapitel, 15 Befunde, eigene Prüfläufe, sehr ausführlicher Ausblick) liegt als einzelne LaTeX-Datei [`science/sharedlib.tex`](science/sharedlib.tex) mit [PDF](science/sharedlib.pdf) vor.
 
 ## Inhaltsverzeichnis 
 
@@ -44,7 +44,6 @@ Siehe [Entwurf und Spezifikation](#entwurf-und-spezifikation) und
   * [Konformität von Proposal und Implementierung](#konformität-von-proposal-und-implementierung)
   * [Anwendung auf Gen-DB und Subgraph-SAT-Solver](#anwendung-auf-gen-db-und-subgraph-sat-solver)
   * [Ausblick (Kapitel 17)](#ausblick-kapitel-17)
-  * [Prüfskripte reproduzieren](#prüfskripte-reproduzieren)
   * [Offene Punkte der zweiten Fassung](#offene-punkte-der-zweiten-fassung)
   * [Kompilieren der zweiten Fassung](#kompilieren-der-zweiten-fassung)
 * [Erwerb](#erwerb)
@@ -544,27 +543,6 @@ Der empfohlene nächste Schritt ist ein Änderungssatz aus drei Teilen: (1) Cont
 erzwungener Kanonizität (B10), solange es kaum Container gibt, (2) Pfadkodierung mit Fluchtzeichen (B1, B2),
 (3) die Testvektoren aus P3 und P5 als Dateien für künftige Implementierungen.
 
-### Prüfskripte reproduzieren
-
-Die Skripte benutzen nur die Standardbibliothek und das Paket `sl`. Aufruf aus dem Verzeichnis der Skripte, mit
-isoliertem Interpreter, damit keine Datei des Arbeitsverzeichnisses importiert wird:
-
-```bash
-python3 -I pruefN.py <Pfad zu sharedlib/src>
-```
-
-| Skript | Inhalt |
-|---|---|
-| `pruef1.py` | Pfadkodierung (P1), Versionen (P2, P2b), Container (P3 bis P3d), `ctypes`-Zwischenspeicher |
-| `pruef2.py` | modellbasierter Loader-Test (P5), Parametrizität (P6), Messung der Öffnungskosten |
-| `pruef3.py` | Diamant, doppeltes `close`, Verlust von Handles |
-| `pruef4.py` | Signaturparser (P4), native Abhängigkeit, Abdeckung, Testzählung |
-| `pruef5.py` | doppeltes `close`, `failed_name`, Verklemmung |
-| `pruef6.py` | Codegenerator: Warnungen, Matrix, Ziele |
-| `pruef7.py` | Versionssatz Teil (b) |
-
-Die Läufe sind mit festen Startwerten wiederholbar; Laufzeiten und Messwerte hängen von der Maschine ab.
-
 ### Offene Punkte der zweiten Fassung
 
 - Der Wortlaut von Kapitel 13 der Vorarbeit (Datei `p3.tex`) lag bei der Erstellung nicht vor; das Kapitel wurde
@@ -591,7 +569,7 @@ ohne deutsche Silbentrennung gesetzt, weil `ngerman` und `lmodern` in der Erzeug
 
 ## Erwerb
 
-Der Preis für diese Software beträgt 15.455.000,00 EUR.
+Der Preis für diese Software beträgt 23.455.000,00 EUR.
 
 ### Zahlungsinformationen
 
