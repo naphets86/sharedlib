@@ -42,7 +42,7 @@ Init: Abhängigkeiten zuerst, einmal; \texttt{DllMain}/Konstruktoren umhüllt (5
 Exporttabelle, nur deklarierte Symbole (5.3/7) & \texttt{Loader.symbol} & erfüllt (API-Ebene) & Satz~\ref{satz:export} \\[0.3em]
 Referenzgezählte Handles, gleiche Instanz (5.3/8) & \texttt{Handle.refcount}, \texttt{\_loaded} & erfüllt & Satz~\ref{satz:refcount}; B13 \\[0.3em]
 Freigabe in umgekehrter Abhängigkeitsordnung (5.3/9) & \texttt{loader.\_release} & erfüllt & Satz~\ref{satz:reihenfolge} \\[0.3em]
-Suchordnung: explizit, \texttt{SL\_PATH}, Aufrufer, Anwendung, System (5.4) & \texttt{search.candidates} & erfüllt; Anwendungsverz. nur falls gesetzt & Satz~\ref{satz:struktur} \\[0.3em]
+Suchordnung: explizit, \texttt{SL\_PATH}, Aufrufer, Anwendung, System (5.4) & \texttt{search.candidates} & erfüllt; App-Pfad nur falls gesetzt & Satz~\ref{satz:struktur} \\[0.3em]
 Ein einheitliches Trennzeichen mit Maskierung (5.4) & \texttt{search.split\_sl\_path} & abweichend & Satz~\ref{satz:split}; B1 \\[0.3em]
 Arbeitsverzeichnis, \texttt{PATH}, \texttt{LD\_LIBRARY\_PATH} nie (5.4) & \texttt{search.candidates} & erfüllt unter Bedingung & Satz~\ref{satz:cwd}; B2 \\[0.3em]
 API \texttt{sl\_open}, \texttt{sl\_symbol}, \texttt{sl\_info}, \texttt{sl\_close} (5.5) & \texttt{capi}, \texttt{binding} & erfüllt (Python); C-ABI des Laders fehlt & Kapitel~\ref{chap:adapter} \\[0.3em]
@@ -68,7 +68,7 @@ Bei widersprüchlichen Kandidaten Fehler (10) & erster Treffer gewinnt & abweich
 
 Ein \SL-Container besteht aus Kopf, Metadaten, Payload-Tabelle und Payload-Bereich (Abbildung~\ref{abb:container}). Die Kodierung steht in \texttt{container.py}.
 
-\begin{lstlisting}[language=Python, caption={Layout und Kodierung (\texttt{container.py}, Zeilen 12--15 und 54--65).}, label={lst:container}]
+\begin{lstlisting}[language=Python, caption={Layout und Kodierung (\texttt{container.py}, Z.~12--15, 54--65).}, label={lst:container}]
 MAGIC = b"\x89SLIB\r\n\x1a"  # genau 8 Byte
 CONTAINER_VERSION = 1
 _HEADER = struct.Struct("<8sHII")       # magic, version, meta_len, entry_count
@@ -92,12 +92,12 @@ def pack(metadata: Metadata, payloads: dict) -> bytes:
 	\centering
 	\begin{tikzpicture}[font=\small, >={Stealth[length=2mm]},
 		b/.style={draw=mainblue, fill=lightgray, minimum height=1.0cm, align=center, inner sep=2pt}]
-		\node[b, minimum width=2.6cm] (h) at (0,0) {Kopf\\18 Byte};
-		\node[b, minimum width=3.4cm, right=0pt of h] (m) {Metadaten (JSON, UTF-8)\\$m$ Byte};
-		\node[b, minimum width=3.6cm, right=0pt of m] (t) {Tabelle\\$k\cdot 80$ Byte};
-		\node[b, minimum width=5.2cm, right=0pt of t] (p) {Payload-Bereich\\$\beta=\sum_t |P(t)|$ Byte};
-		\node[font=\scriptsize, align=left, text width=7cm, anchor=north west] at ([yshift=-0.3cm]h.south west) {Kopf: Magic (8), Version (2), $m$ (4), $k$ (4)};
-		\node[font=\scriptsize, align=left, text width=8cm, anchor=north west] at ([yshift=-0.3cm]t.south west) {Eintrag: Plattform (16), Architektur (16), Offset (8), Länge (8), SHA-256 (32)};
+		\node[b, minimum width=2.4cm] (h) at (0,0) {Kopf\\18 Byte};
+		\node[b, minimum width=3.2cm, right=0pt of h] (m) {Metadaten (JSON, UTF-8)\\$m$ Byte};
+		\node[b, minimum width=3.3cm, right=0pt of m] (t) {Tabelle\\$k\cdot 80$ Byte};
+		\node[b, minimum width=4.6cm, right=0pt of t] (p) {Payload-Bereich\\$\beta=\sum_t |P(t)|$ Byte};
+		\node[font=\scriptsize, align=left, text width=5cm, anchor=north west] at ([yshift=-0.3cm]h.south west) {Kopf: Magic (8), Version (2), $m$ (4), $k$ (4)};
+		\node[font=\scriptsize, align=left, text width=6.5cm, anchor=north west] at ([yshift=-0.3cm]t.south west) {Eintrag: Plattform (16), Architektur (16), Offset (8), Länge (8), SHA-256 (32)};
 	\end{tikzpicture}
 	\caption{Byte-Layout eines Containers. Ein Eintrag der Tabelle hat $16+16+8+8+32=80$ Byte, der Kopf $8+2+4+4=18$ Byte (Little Endian, ohne Auffüllbytes wegen des Präfixes \texttt{<}).}
 	\label{abb:container}

@@ -101,6 +101,10 @@
 \newtheorem{annahme}{Annahme}[chapter]
 \newtheorem{befund}{Befund}[chapter]
 \lstdefinelanguage{TOML}{morestring=[b]",morekeywords={true,false},morecomment=[l]{\#}}
+% ---------- Listings: gleichmäßige Zeichenbreite, damit Zeilenumbrüche den Rand nie überschreiten ----------
+\lstset{basicstyle=\ttfamily\footnotesize, columns=fixed, keepspaces=true, xrightmargin=0.3em}
+\setlength{\emergencystretch}{4em}
+\makeatletter\renewcommand{\@pnumwidth}{2em}\renewcommand{\@tocrmarg}{3em}\makeatother
 
 \title{\textbf{Das einheitliche Shared-Library-Format \SL\\Standardisierte Ladeprozedur}\\[0.4em]
 	\large Formale Analyse der Referenzimplementierung \texttt{sharedlib} und ihre Wiederverwendung in Gen-DB und Subgraph-SAT-Solver}
@@ -183,7 +187,7 @@ Die Arbeit hat fünf Teile (Abbildung~\ref{abb:gliederung}).
     \centering
     \resizebox{0.97\textwidth}{!}{%
         \begin{tikzpicture}[font=\small, >={Stealth[length=2mm]},
-            t/.style={draw=mainblue, rounded corners=2pt, fill=lightgray, align=center, text width=3.0cm, minimum height=1.6cm, inner sep=3pt}]
+            t/.style={draw=mainblue, rounded corners=2pt, fill=lightgray, align=center, text width=3.15cm, minimum height=1.6cm, inner sep=3pt}]
             \node[t] (a) at (0,0) {\textbf{I Ausgangslage}\\1 Einführung\\2 Plattformen\\3 Grundlagen};
             \node[t] (b) at (3.6,0) {\textbf{II Das Verfahren}\\4 Anforderungen\\5 Container\\6 Suche\\7 Lader\\8 Adapter};
             \node[t] (c) at (7.2,0) {\textbf{III Umfeld}\\9 Codegenerierung\\10 Versionen\\11 Sicherheit\\12 Anwendung};
@@ -208,7 +212,7 @@ Tabelle~\ref{tab:plattformen} stellt die Unterschiede zusammen, die \texttt{prop
 \begin{table}[!ht]
 	\centering
 	\small
-	\begin{tabularx}{\textwidth}{@{}L{3.0cm}YYY@{}}
+	\begin{tabularx}{\textwidth}{@{}L{3.6cm}YYY@{}}
 		\toprule
 		Aspekt & Windows & Linux & macOS \\
 		\midrule
@@ -275,6 +279,22 @@ Die Vorarbeit unterscheidet sieben Formen der Wiederverwendung (Portierung, Vera
 
 Dieses Kapitel legt das Modell fest, auf das sich alle Sätze beziehen. Es bildet den Quelltext von \texttt{sl} so ab, dass jede Definition einer benannten Funktion entspricht; die Zuordnung steht jeweils im Text.
 
+Abbildung~\ref{abb:schichten} zeigt die vier Schichten, auf die sich das Modell bezieht.
+
+\begin{figure}[t]
+	\centering
+	\begin{tikzpicture}[font=\small, >={Stealth[length=2.2mm]},
+		box/.style={draw=mainblue, fill=lightgray, align=center, text width=10.6cm, minimum height=0.9cm, inner sep=3pt}]
+		\node[box] (app) at (0,6.0) {\textbf{Anwendung / Sprachbindung}\\\texttt{sl.open}, \texttt{sl\_open}\quad (\texttt{binding}, \texttt{capi})};
+		\node[box] (core) at (0,4.0) {\textbf{Lader-Kern} (überall gleich)\\Auflösung, Validierung, Abhängigkeiten, Init/Fini, Zyklen, Zähler\\(\texttt{loader}, \texttt{search})};
+		\node[box, draw=accentred] (ad) at (0,2.0) {\textbf{Plattformadapter} (Orakel $\mathcal{O}$)\\\texttt{map\_payload}, \texttt{lookup}, \texttt{unmap}, \texttt{system\_dirs}\\(\texttt{adapters})};
+		\node[box] (cont) at (0,0) {\textbf{Container}: Metadaten + Payload je Target\\(\texttt{container}, \texttt{metadata})};
+		\draw[->, thick] (app)--(core); \draw[->, thick] (core)--(ad); \draw[->, thick] (ad)--(cont);
+	\end{tikzpicture}
+	\caption{Schichten nach \texttt{proposal.md} Abschnitt~5.2 und README. Nach dem Entwurf liegt \emph{alles} Betriebssystemspezifische im roten Adapter; Kapitel~\ref{chap:adapter} prüft das.}
+	\label{abb:schichten}
+\end{figure}
+
 \section{Plattformen, Targets, Versionen}
 
 \begin{definition}[Plattformraum und Target]
@@ -327,26 +347,14 @@ Die Annahme ist für die Beweise nötig und für die Wirklichkeit nur näherungs
 
 \begin{definition}[Abhängigkeitsgraph]
 	\label{def:graph}
-	Für die Dateien $\mathcal{F}_{\mathrm{sl}}\subseteq\mathcal{F}$, die gültige Container sind, sei $\mathrm{res}(n,d)$ das Ergebnis von \texttt{locate} für den Namen $n$ mit Aufrufer-Verzeichnis $d$ (Kapitel~\ref{chap:suche}), als Schlüssel; $\bot$, falls keine Datei gefunden wird. Der \emph{Abhängigkeitsgraph} $G=(V,\to)$ hat $V=\mathcal{F}_{\mathrm{sl}}$ und für jeden Eintrag $(n,\mathsf{s})\in D_f$ eine Kante $f\xrightarrow{n,\mathsf{s}}\mathrm{res}(n,\mathrm{dirname}(f))$, sofern diese $\ne\bot$ ist. Mehrfachkanten werden mitgezählt. $G_r$ bezeichnet den von $r$ aus erreichbaren Teilgraphen, $V_r$ und $E_r$ seine Knoten- und Kantenmengen.
+	Für die Dateien $\mathcal{F}_{\mathrm{sl}}\subseteq\mathcal{F}$, die gültige Container sind, sei $\mathrm{res}(n,d)$ das Ergebnis von \texttt{locate} für den Namen $n$ mit Aufrufer-Verzeichnis $d$ (Kapitel~\ref{chap:suche}), als Schlüssel; $\bot$, falls keine Datei gefunden wird. Der \emph{Abhängigkeitsgraph} $G=(V,\to)$ hat $V=\mathcal{F}_{\mathrm{sl}}$ und für jeden Eintrag $(n,\mathsf{s})\in D_f$ eine Kante $f\to g$ mit $g=\mathrm{res}(n,\mathrm{dirname}(f))$, sofern $g\ne\bot$ ist; die Kante trägt die Beschriftung $(n,\mathsf{s})$. Mehrfachkanten werden mitgezählt. $G_r$ bezeichnet den von $r$ aus erreichbaren Teilgraphen, $V_r$ und $E_r$ seine Knoten- und Kantenmengen.
 \end{definition}
 
 \section{Notation für Aussagen über Abläufe}
 
 Ein \emph{Ablauf} ist die Folge der Aufrufe des Orakels und der Hooks, die eine Operation auslöst. Mit $\mathrm{init}(g)$ und $\mathrm{fini}(g)$ bezeichnen wir die Ereignisse „Init-Hook von $g$ ist aufgerufen“ und „Fini-Hook ist aufgerufen“, mit $\mathrm{map}(g)$ und $\mathrm{unmap}(g)$ die Aufrufe des Orakels. Für Ereignisse $e,e'$ bedeutet $e\prec e'$, dass $e$ im Ablauf vor $e'$ steht.
 
-\begin{figure}[!ht]
-	\centering
-	\begin{tikzpicture}[font=\small, >={Stealth[length=2.2mm]},
-		box/.style={draw=mainblue, fill=lightgray, align=center, text width=11.5cm, minimum height=1.1cm, inner sep=3pt}]
-		\node[box] (app) at (0,6.6) {\textbf{Anwendung / Sprachbindung}\\\texttt{sl.open}, \texttt{sl\_open}\quad (\texttt{binding}, \texttt{capi})};
-		\node[box] (core) at (0,4.8) {\textbf{Lader-Kern} (überall gleich)\\Auflösung, Validierung, Abhängigkeiten, Init/Fini, Zyklen, Referenzzählung\quad (\texttt{loader}, \texttt{search})};
-		\node[box, draw=accentred] (ad) at (0,3.0) {\textbf{Plattformadapter} (Orakel $\mathcal{O}$)\\\texttt{map\_payload}, \texttt{lookup}, \texttt{unmap}, \texttt{system\_dirs}\quad (\texttt{adapters})};
-		\node[box] (cont) at (0,1.2) {\textbf{Container}: Metadaten + Payload je Target\\(\texttt{container}, \texttt{metadata})};
-		\draw[->, thick] (app)--(core); \draw[->, thick] (core)--(ad); \draw[->, thick] (ad)--(cont);
-	\end{tikzpicture}
-	\caption{Schichten nach \texttt{proposal.md} Abschnitt~5.2 und README. Nach dem Entwurf liegt \emph{alles} Betriebssystemspezifische im roten Adapter; Kapitel~\ref{chap:adapter} prüft das.}
-	\label{abb:schichten}
-\end{figure}
+
 
 \include{sl_teil1}
 \include{sl_teil2}
