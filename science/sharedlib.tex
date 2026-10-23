@@ -3,8 +3,8 @@
 \PassOptionsToPackage{hyphens}{url}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage[ngerman]{babel}
-\usepackage{lmodern}
+\usepackage[german]{babel}
+% \usepackage{lmodern}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsthm}
@@ -214,6 +214,29 @@ Teil~I legt Begriffe und die formalen Grundlagen fest und ordnet \texttt{sharedl
 
 Dieses Kapitel legt die Begriffe fest, auf denen die Beweise der Teile~II und~III beruhen. Es ist bewusst klein gehalten: Zeichenketten, endliche Abbildungen, endliche gerichtete Graphen, eine Ordnung auf Versionen und ein Ergebnistyp mit Ereignisspur. Alles Weitere (Suchordnung, Container, Loader) wird erst in Kapitel~\ref{chap:modell} definiert.
 
+\section{Symbolübersicht}
+
+\begin{table}[!ht]
+	\centering
+	\small
+	\begin{tabularx}{\textwidth}{@{}L{3.2cm}Y@{}}
+		\toprule
+		Symbol & Bedeutung \\
+		\midrule
+		$\FS$, $E$, $w$ & Dateisystem, Umgebung, Arbeitsverzeichnis (Def.~\ref{def:fs}) \\
+		$\mathrm{Enc}$, $\mathrm{Dec}$ & Kodierung und Dekodierung von \texttt{SL\_PATH} (Def.~\ref{def:slpath}) \\
+		$\cand_C(n,\rho)$ & Kandidatenliste der Suche (Def.~\ref{def:cand}) \\
+		$\mathsf V$, $S(\mathrm{spec})$ & Versionen, Erfüllungsmenge eines Bereichs (Def.~\ref{def:range}) \\
+		$\mathrm{pack}$, $\mathrm{unpack}$ & Container schreiben und lesen (Def.~\ref{def:container}) \\
+		$\Gamma=(\mathcal L,S)$ & Zustand des Loaders: geladene Knoten und Ladestapel (Def.~\ref{def:zustand}) \\
+		$\rc(k)$, $\ext(k)$ & Referenzzähler und Zahl externer Referenzen \\
+		$\mathsf{St}$ & Menge der Fehlerstatus (Def.~\ref{def:status}) \\
+		\bottomrule
+	\end{tabularx}
+	\caption{Die wichtigsten Symbole der Arbeit.}
+	\label{tab:symbole}
+\end{table}
+
 \section{Zeichenketten, Listen und endliche Abbildungen}
 
 Sei $\Sigma$ ein endliches Alphabet, das die in Pfaden, Namen und Umgebungsvariablen vorkommenden Zeichen enthält. $\Sigma^*$ bezeichnet die endlichen Wörter über $\Sigma$, $\varepsilon$ das leere Wort, $u\cdot v$ (oder $uv$) die Verkettung und $|u|$ die Länge. Ein Wort $u$ ist ein \emph{Präfix} von $w$, wenn $w=uv$ für ein $v$. Für eine Liste $L=(x_1,\ldots,x_k)$ ist $|L|=k$, $L\cdot L'$ die Verkettung und $L[i]=x_i$. Die Abbildung $\operatorname{dedup}(L)$ streicht aus $L$ jedes Element, das weiter links schon vorkommt (die Reihenfolge der ersten Vorkommen bleibt).
@@ -299,30 +322,6 @@ Der Container sichert Payloads mit SHA-256 \cite{fips180}. Wo ein Satz darauf be
 \end{definition}
 
 Sie ist eine unbewiesene, aber allgemein geteilte Annahme und im Folgenden die einzige kryptographische Voraussetzung.
-
-\section{Symbolübersicht}
-
-\begin{table}[!ht]
-	\centering
-	\small
-	\begin{tabularx}{\textwidth}{@{}L{3.2cm}Y@{}}
-		\toprule
-		Symbol & Bedeutung \\
-		\midrule
-		$\FS$, $E$, $w$ & Dateisystem, Umgebung, Arbeitsverzeichnis (Def.~\ref{def:fs}) \\
-		$\mathrm{Enc}$, $\mathrm{Dec}$ & Kodierung und Dekodierung von \texttt{SL\_PATH} (Def.~\ref{def:slpath}) \\
-		$\cand_C(n,\rho)$ & Kandidatenliste der Suche (Def.~\ref{def:cand}) \\
-		$\mathsf V$, $S(\mathrm{spec})$ & Versionen, Erfüllungsmenge eines Bereichs (Def.~\ref{def:range}) \\
-		$\mathrm{pack}$, $\mathrm{unpack}$ & Container schreiben und lesen (Def.~\ref{def:container}) \\
-		$\Gamma=(\mathcal L,S)$ & Zustand des Loaders: geladene Knoten und Ladestapel (Def.~\ref{def:zustand}) \\
-		$\rc(k)$, $\ext(k)$ & Referenzzähler und Zahl externer Referenzen \\
-		$\mathsf{St}$ & Menge der Fehlerstatus (Def.~\ref{def:status}) \\
-		\bottomrule
-	\end{tabularx}
-	\caption{Die wichtigsten Symbole der Arbeit.}
-	\label{tab:symbole}
-\end{table}
-
 
 \chapter{Projektlandschaft und Wiederverwendungsformen}
 \label{chap:landschaft}
@@ -2275,7 +2274,7 @@ Eine \emph{Auswahl} ist eine Teilmenge $A\subseteq\mathcal R$ mit höchstens ein
 Aus Satz~\ref{satz:konvex} folgt, dass jede Klausel~3 eine \emph{Intervallklausel} ist: die Versionen $w\in S$ bilden ein zusammenhängendes Stück der geordneten Versionen von $m$. Das erlaubt eine kompaktere Kodierung mit Ordnungsvariablen $y_{m,\ge w}$ (``Version von $m$ ist mindestens $w$''), bei der jede Abhängigkeitsklausel aus zwei Literalen besteht, statt einer Disjunktion über alle Versionen im Bereich: $\neg x_{n,v}\vee y_{m,\ge\mathrm{lo}}$ und $\neg x_{n,v}\vee\neg y_{m,\ge\mathrm{hi}}$. Die Klauselzahl wird linear in der Zahl der Kanten statt in der Zahl der Versionen je Kante; die Korrektheit zu zeigen ist eine Übung nach dem Muster des Beweises oben, mit den Kettenklauseln $y_{m,\ge w'}\to y_{m,\ge w}$ für $w\le w'$.
 
 \subsection{Anschluss an die Subgraph-SAT-Kette}
-Die Vorarbeit \cite{epp2026csubgraph} verwendet den Subgraph-Algorithmus als Baustein in einer SAT-Kette. Zwei Berührungspunkte:
+Die Vorarbeit \cite{epp2026csubgraph} verwendet den Subgraph Algorithmus als Baustein in einer SAT-Kette. Zwei Berührungspunkte:
 \begin{itemize}
 	\item \emph{Der Resolver als Anwendungsfall des Solvers:} Abhängigkeitsauflösung ist ein SAT-Problem mit besonderer Struktur (hierarchisch, viele Zwei-Literal-Klauseln). Ob der Solver aus \texttt{subgraph-sat-solver-econ} für diese Klasse gut ist, ist eine Messfrage; als Prüfstein taugen reale Abhängigkeitsgraphen von Paketverwaltungen.
 	\item \emph{Der Solver als Bibliothek hinter \texttt{.sl}:} Wird der Solver als \texttt{.sl}-Container ausgeliefert (Wiederverwendung \W{20}), kann der Resolver ihn über die Schicht benutzen; der Loader löst damit \emph{sein eigenes} Abhängigkeitsproblem mit einer Bibliothek, die er lädt. Die Henne-Ei-Frage (der Resolver braucht den Solver, der Solver braucht den Resolver) wird durch einen kleinen eingebauten Resolver für den Solver selbst gelöst.
